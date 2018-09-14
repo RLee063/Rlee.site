@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="计算机组成原理," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="第一周：程序执行概述 读数据的过程： 首先将地址传到MAR中，再由控制总线传入读命令，之后内存取出数据返回到MDR中。 写数据的过程： 首先将地址传到MAR中，再由控制总线传入写命令，把数据放到MDR中，之后内存会把MDR中的数据写到相应内存中。  第二周：主存储器知识基本术语：  内存条组织与主存结构:   例如一个128M的内存条，芯片数决定了一次所能读取的字节数，每个芯片能读取一个字节，假设">
+<meta name="keywords" content="计算机组成原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="&lt;计算机系统基础&gt;Mooc笔记">
+<meta property="og:url" content="http://yoursite.com/2018/03/07/计算机系统基础-Mooc笔记/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="第一周：程序执行概述 读数据的过程： 首先将地址传到MAR中，再由控制总线传入读命令，之后内存取出数据返回到MDR中。 写数据的过程： 首先将地址传到MAR中，再由控制总线传入写命令，把数据放到MDR中，之后内存会把MDR中的数据写到相应内存中。  第二周：主存储器知识基本术语：  内存条组织与主存结构:   例如一个128M的内存条，芯片数决定了一次所能读取的字节数，每个芯片能读取一个字节，假设">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091114141-142037581.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091301743-167965082.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091901650-1082205787.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307092323175-462506982.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307092253212-1145585580.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307093112820-2017904419.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307093320776-1972756960.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190202617-404284503.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190238550-1406314377.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190457810-277360668.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190751974-199408246.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190914462-534649806.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308191029347-900403041.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308191306695-897919222.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308191821703-2059980171.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192159630-543797092.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192308192-1188485753.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192326902-278623019.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192646136-2003617093.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192823456-1742486139.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193215722-733078675.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193343081-264250986.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193439114-1295589599.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193530109-782290377.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193614799-2041569061.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193907018-1608899051.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308194120810-366921849.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224259424-3246745.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224431256-1942140542.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224635224-1925863084.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224822534-1074536640.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224847960-1173370014.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224932647-1730532977.png">
+<meta property="og:updated_time" content="2018-09-14T05:56:53.279Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="&lt;计算机系统基础&gt;Mooc笔记">
+<meta name="twitter:description" content="第一周：程序执行概述 读数据的过程： 首先将地址传到MAR中，再由控制总线传入读命令，之后内存取出数据返回到MDR中。 写数据的过程： 首先将地址传到MAR中，再由控制总线传入写命令，把数据放到MDR中，之后内存会把MDR中的数据写到相应内存中。  第二周：主存储器知识基本术语：  内存条组织与主存结构:   例如一个128M的内存条，芯片数决定了一次所能读取的字节数，每个芯片能读取一个字节，假设">
+<meta name="twitter:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091114141-142037581.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/07/计算机系统基础-Mooc笔记/"/>
+
+
+
+
+
+  <title><计算机系统基础>Mooc笔记 | Hexo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/07/计算机系统基础-Mooc笔记/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline"><计算机系统基础>Mooc笔记</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-07T09:36:00+09:00">
+                2018-03-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/学习笔记/" itemprop="url" rel="index">
+                    <span itemprop="name">学习笔记</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="第一周：程序执行概述"><a href="#第一周：程序执行概述" class="headerlink" title="第一周：程序执行概述"></a>第一周：程序执行概述</h1><p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091114141-142037581.png" alt=""></p>
+<p><strong>读数据的过程：</strong> 首先将地址传到MAR中，再由控制总线传入读命令，之后内存取出数据返回到MDR中。</p>
+<p><strong>写数据的过程：</strong> 首先将地址传到MAR中，再由控制总线传入写命令，把数据放到MDR中，之后内存会把MDR中的数据写到相应内存中。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091301743-167965082.png" alt="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091301743-167965082.png"></p>
+<h1 id="第二周：主存储器知识"><a href="#第二周：主存储器知识" class="headerlink" title="第二周：主存储器知识"></a>第二周：主存储器知识</h1><p>基本术语：</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091901650-1082205787.png" alt="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307091901650-1082205787.png"></p>
+<p>内存条组织与主存结构:</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307092323175-462506982.png" alt="3"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307092253212-1145585580.png" alt="4"></p>
+<p>例如一个128M的内存条，芯片数决定了一次所能读取的字节数，每个芯片能读取一个字节，假设该内存条有八个芯片，每个芯片有16M，每个芯片都是按8位编址，16M <em> 8 bits = 2^12 </em> 2^12 * 8 bits，所以芯片有12行12列，厚度为8，控制器先发来所取地址的行信息，每个DRAM芯片将对应行整个取出放到行缓冲器中，接下来传来列信息（分两次传入目的减少芯片引脚）芯片在行缓冲期中将对应列8bits取出，所有芯片同时存取，所以在每个芯片中地址是交叉编制不是连续的。</p>
+<h1 id="第三周：磁盘驱动器"><a href="#第三周：磁盘驱动器" class="headerlink" title="第三周：磁盘驱动器"></a>第三周：磁盘驱动器</h1><p>磁盘驱动器操作过程:</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307093112820-2017904419.png" alt="5"></p>
+<p>磁盘存储器的链接与操作：</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180307093320776-1972756960.png" alt="6"></p>
+<p>首先由CPU设置参数，然后发出一条指令启动磁盘驱动器工作，然后CPU执行其他进程；当磁盘驱动器工作完成后向CPU发出一个中断请求，CPU暂停手头的工作来进行数据校验。</p>
+<h1 id="第四周：高速缓存概述"><a href="#第四周：高速缓存概述" class="headerlink" title="第四周：高速缓存概述"></a>第四周：高速缓存概述</h1><p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190202617-404284503.png" alt="1"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190238550-1406314377.png" alt="2"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190457810-277360668.png" alt="3"></p>
+<p>#tag前还有一位v标记是否放入有效块</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190751974-199408246.png" alt="4"></p>
+<p>行数 = Cache数据区容量 / block 容量</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308190914462-534649806.png" alt="5"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308191029347-900403041.png" alt="6"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308191306695-897919222.png" alt="7"></p>
+<p>命中率很关键，能做的只有提高命中率，且提高效果拔群。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308191821703-2059980171.png" alt="8"></p>
+<h1 id="第五周：Cache替换算法"><a href="#第五周：Cache替换算法" class="headerlink" title="第五周：Cache替换算法"></a>第五周：Cache替换算法</h1><p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192159630-543797092.png" alt="8"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192308192-1188485753.png" alt="9"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192326902-278623019.png" alt="10"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192646136-2003617093.png" alt="11"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308192823456-1742486139.png" alt="12"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193215722-733078675.png" alt="13"></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193343081-264250986.png" alt="14"></p>
+<h1 id="第六周：虚拟存储器"><a href="#第六周：虚拟存储器" class="headerlink" title="第六周：虚拟存储器"></a>第六周：虚拟存储器</h1><p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193439114-1295589599.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193530109-782290377.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193614799-2041569061.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308193907018-1608899051.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308194120810-366921849.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224259424-3246745.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224431256-1942140542.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224635224-1925863084.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224822534-1074536640.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224847960-1173370014.png" alt=""><br><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180308224932647-1730532977.png" alt=""></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/计算机组成原理/" rel="tag"># 计算机组成原理</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2007/09/14/转载-深入解析结构化异常处理/" rel="next" title="[转载]深入解析结构化异常处理
+">
+                <i class="fa fa-chevron-left"></i> [转载]深入解析结构化异常处理
+
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/23/fport逆向分析与实现/" rel="prev" title="fport逆向分析与实现">
+                fport逆向分析与实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">John Doe</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#第一周：程序执行概述"><span class="nav-number">1.</span> <span class="nav-text">第一周：程序执行概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第二周：主存储器知识"><span class="nav-number">2.</span> <span class="nav-text">第二周：主存储器知识</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第三周：磁盘驱动器"><span class="nav-number">3.</span> <span class="nav-text">第三周：磁盘驱动器</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第四周：高速缓存概述"><span class="nav-number">4.</span> <span class="nav-text">第四周：高速缓存概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第五周：Cache替换算法"><span class="nav-number">5.</span> <span class="nav-text">第五周：Cache替换算法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第六周：虚拟存储器"><span class="nav-number">6.</span> <span class="nav-text">第六周：虚拟存储器</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

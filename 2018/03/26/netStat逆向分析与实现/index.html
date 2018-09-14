@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="逆向," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="netStat和Fport的功能差不多，据说xp上比fport少某些功能，但是我的xp可能比较特殊，fport的功能netStat上的都有，一头雾水地抓起WIn7的netStat就开始分析。  目标是五个功能:  本地地址 [ip + 端口] 外部地址 [ip + 端口] 状态 PID 所有权信息  还是先通过IDA和OD，找到程序关键的函数 DoConnection()：  　主要的逻辑就在这儿">
+<meta name="keywords" content="逆向">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netStat逆向分析与实现">
+<meta property="og:url" content="http://yoursite.com/2018/03/26/netStat逆向分析与实现/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="netStat和Fport的功能差不多，据说xp上比fport少某些功能，但是我的xp可能比较特殊，fport的功能netStat上的都有，一头雾水地抓起WIn7的netStat就开始分析。  目标是五个功能:  本地地址 [ip + 端口] 外部地址 [ip + 端口] 状态 PID 所有权信息  还是先通过IDA和OD，找到程序关键的函数 DoConnection()：  　主要的逻辑就在这儿">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326224810221-1902021664.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326225358641-324486439.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326230427735-1484080174.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326230710825-1181398406.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231150829-201142701.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231520450-1567036833.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231602029-1489706174.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231734592-1359646143.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326232555754-1624662696.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326232612541-567821359.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327190126865-140937597.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327190021414-37463799.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327190810322-1471306505.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327191033801-1490838981.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327191632955-1329148162.png">
+<meta property="og:updated_time" content="2018-09-14T06:04:27.693Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="netStat逆向分析与实现">
+<meta name="twitter:description" content="netStat和Fport的功能差不多，据说xp上比fport少某些功能，但是我的xp可能比较特殊，fport的功能netStat上的都有，一头雾水地抓起WIn7的netStat就开始分析。  目标是五个功能:  本地地址 [ip + 端口] 外部地址 [ip + 端口] 状态 PID 所有权信息  还是先通过IDA和OD，找到程序关键的函数 DoConnection()：  　主要的逻辑就在这儿">
+<meta name="twitter:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326224810221-1902021664.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/26/netStat逆向分析与实现/"/>
+
+
+
+
+
+  <title>netStat逆向分析与实现 | Hexo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/26/netStat逆向分析与实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">netStat逆向分析与实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-26T23:29:20+09:00">
+                2018-03-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/自娱自乐/" itemprop="url" rel="index">
+                    <span itemprop="name">自娱自乐</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>netStat和Fport的功能差不多，据说xp上比fport少某些功能，但是我的xp可能比较特殊，fport的功能netStat上的都有，一头雾水地抓起WIn7的netStat就开始分析。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326224810221-1902021664.png" alt=""></p>
+<p>目标是五个功能:</p>
+<ul>
+<li>本地地址 [ip + 端口]</li>
+<li>外部地址 [ip + 端口]</li>
+<li>状态</li>
+<li>PID</li>
+<li>所有权信息</li>
+</ul>
+<p>还是先通过IDA和OD，找到程序关键的函数 DoConnection()：</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326225358641-324486439.png" alt=""></p>
+<p>　主要的逻辑就在这儿，先通过InternalGetTcpTableWithOwnerModule()获取Tcp表，这点和Fport的AllocateAndGetTcpExTableFromStack分厂相似，这两个函数都属于 iphlpapi.dll，只不过后者最高支持xp系统，而前者在xp后才支持。</p>
+<p>　　通过OD调试查看输出信息可以确定所有有用的信息应该都在这个表里面，在MSDN上没有查到（能力问题）合适的数据结构，还可以发现输出是在DisplayTcpConnEntry里完成的，每一个while循环输出一个表项，所以确定了while循环的退出条件也就是返回的表的第一个四字节显示了表中表项的个数。最开始以为DisplayTcpConnEntry的参数就是具体的ip、port之类的，后来发现其实是传入了表项的首地址，通过IDA反的C代码可以确定第一个表项是从返回的表偏移两个四字节处开始，并且表项长度为0XA0个字节，由此可以确定数据结构的结构。进入displayTcpConnEntry查看。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326230427735-1484080174.png" alt=""></p>
+<p>通过与输出信息的比对可以发现v6为本地地址port，v7为本地地址ip，所以表项偏移一个四字节为本地ip，偏移两个四字节为port的大端存储【第一项√】（事后发现高兴的太早了）。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326230710825-1181398406.png" alt=""></p>
+<p>然后是一长串的switch，通过比对函数的返回值发现执行了这个函数之后出现了状态字串（如LISTENLING），然后发现给FormatMessage（）传入适当参数可以返回这个状态字串（这儿偷了个懒没有调用这个接口，通过更改即时的数据获得了TCP表项中的数字与状态的关系）【第三项√】，之后的函数调用发现他喵的有点眼熟啊</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231150829-201142701.png" alt=""></p>
+<p>这他喵的就是传本地ip和port的那个函数啊，大胆猜测是外部地址好吧【第二项√】（还是太天真）。</p>
+<p>之后调用了一个output的函数输出了上述的三种信息，继续跟踪发现在DisplayOwnerInfo里面输出了pid和所有权信息，进入</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231520450-1567036833.png" alt=""></p>
+<p>在里面看到一个老朋友，dwProcessId就是pid，而这个参数是函数的形参，再回去看函数调用</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231602029-1489706174.png" alt=""></p>
+<p>哦你他吗就是偏移五个四字节嘛【第四项√】，回到displayOwnerInfo（）</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326231734592-1359646143.png" alt=""></p>
+<p>K32GetModuleBaseNameA（）就返回了所有者的那个*.exe的信息【第五项√】，这儿有个判断，如果是svchost.exe或者rundll32.exe就会输出相应的模块信息，用后面的那啥不说的打开一个advapi32.dll然后使用I_QueryTagInformation，这儿偷懒了没做这个功能</p>
+<p>至此Tcp表所有信息解析完毕，与此类似的还有Tcp6表、Udp表、Udp6表。感觉马上就可以写程序好吧，但是</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326232555754-1624662696.png" alt=""></p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180326232612541-567821359.png" alt=""></p>
+<p>傻逼了吧，内网地址外网地址输出千变万化，特别是TCP6、UDP6的输出信息，咋这么奇怪呢。</p>
+<p>回到刚才传入ip和port的那个函数，刚才我们只是表面推断了ip和port的存入地址，看来并非所有情况都是如此，OD动态跟进定位字符串获取的API</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327190126865-140937597.png" alt=""></p>
+<p>获取IP字串的逻辑就是这一坨，靠getnameinfo（）</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327190021414-37463799.png" alt=""></p>
+<p>　这个API可以返回host name和service name，返回的字串就存在host里面，通过动态跟踪观察发现netstat在-abno的参数下主要信息就只是通过第一个getnameinfo返回，懒了说实话突然没那个耐心去分析什么情况下会调用其他的getNameInfo，大胆猜测在这儿其他的没用，接下来是确定参数，第一个参数是一个结构体指针比较重要，里面就存放了输入信息，第二个指针是sizeof(struct sockaddr)，第三个参数outputBuffer，第四个参数立即数buffer长度，由于不需要Servicename，五六参数均置为0，flag如果是tcp、udp就是那个什么不说0xB，如果是tcp6、udp6就是0x1b。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327190810322-1471306505.png" alt=""></p>
+<p>Tcp和Udp初始化结构体的函数，可以看出结构体长度16字节，第一个字节的第一个二字节存放0x2，第二个二字节存放端口的大端表示，之后跟的是先前确定存放ip信息的四字节，之后是两个int 0。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327191033801-1490838981.png" alt=""></p>
+<p>TCP6和UDP6的结构体把表项首地址也传进来了，第一个short为23，第二个也是short为端口的网络字节序，之后是表项的头16字节，之后是ip信息的四个字节，一共28个字节。</p>
+<p>Ps:在用getNameInfo的时候需要先调用WSAstartup()，不然不能正确返回。</p>
+<p>至此分析结束，得差不多就这样</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180327191632955-1329148162.png" alt=""></p>
+<p>垃圾代码附上，注释区是天真的区域</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;WS2tcpip.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;Windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;WinBase.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;IPHlpApi.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;Psapi.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">int</span> _<span class="function">stdcall <span class="title">A</span><span class="params">(<span class="keyword">int</span>**, HANDLE, <span class="keyword">int</span>)</span></span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">int</span> _<span class="function">stdcall <span class="title">B</span><span class="params">(<span class="keyword">int</span>**, HANDLE, <span class="keyword">int</span>)</span></span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">int</span> _<span class="function">stdcall <span class="title">C</span><span class="params">(<span class="keyword">int</span>**, HANDLE, <span class="keyword">int</span>)</span></span>;</span><br><span class="line"><span class="keyword">typedef</span> <span class="keyword">int</span> _<span class="function">stdcall <span class="title">D</span><span class="params">(<span class="keyword">int</span>**, HANDLE, <span class="keyword">int</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddrM</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">short</span> v1, v2;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> v3, v4, v5;</span><br><span class="line">&#125;SOCKADD;</span><br><span class="line"></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//void ShowIpAndPort(unsigned int ip, unsigned int port, unsigned int tuFlag, unsigned int p6Flag) &#123;</span></span><br><span class="line"><span class="comment">//    char myIp[0x104];</span></span><br><span class="line"><span class="comment">//    SOCKADD* soc;</span></span><br><span class="line"><span class="comment">//    soc-&gt;v1 = soc-&gt;v2 = soc-&gt;v3 = soc-&gt;v4 = soc-&gt;v5 = 0;</span></span><br><span class="line"><span class="comment">//    if (p6Flag) &#123;</span></span><br><span class="line"><span class="comment">//        soc-&gt;v1 = 0x17;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"><span class="comment">//    else &#123;</span></span><br><span class="line"><span class="comment">//        soc-&gt;v1 = 0x2;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"><span class="comment">//    soc-&gt;v2 = htons(port);</span></span><br><span class="line"><span class="comment">//    soc-&gt;v3 = ip;</span></span><br><span class="line"><span class="comment">//    getnameinfo((const SOCKADDR *)soc, 0x10, myIp, 0x104, 0, 0, tuFlag);</span></span><br><span class="line"><span class="comment">//    cout &lt;&lt; myIp &lt;&lt; ":" &lt;&lt; port &lt;&lt; " ";</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//void ShowInformation(int ipN, int portN, int ipW, int portW, int stat, int pid, int type) &#123;</span></span><br><span class="line"><span class="comment">//    switch (type)</span></span><br><span class="line"><span class="comment">//    &#123;</span></span><br><span class="line"><span class="comment">//    case 1:</span></span><br><span class="line"><span class="comment">//        ShowIpAndPort(ipN, portN, 0xB, 0);</span></span><br><span class="line"><span class="comment">//        break;</span></span><br><span class="line"><span class="comment">//    case 2:</span></span><br><span class="line"><span class="comment">//        ShowIpAndPort(portN, 0xB, 1);</span></span><br><span class="line"><span class="comment">//        break;</span></span><br><span class="line"><span class="comment">//    case 3:</span></span><br><span class="line"><span class="comment">//        ShowIpAndPort(portN, 0x1B, 0);</span></span><br><span class="line"><span class="comment">//        break;</span></span><br><span class="line"><span class="comment">//    case 4:</span></span><br><span class="line"><span class="comment">//        ShowIpAndPort(portN, 0x1B, 1);</span></span><br><span class="line"><span class="comment">//        break;</span></span><br><span class="line"><span class="comment">//    default:</span></span><br><span class="line"><span class="comment">//        break;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"><span class="comment">//    //byte* ipn = (byte*)&amp;ipN;</span></span><br><span class="line"><span class="comment">//    //cout &lt;&lt; (u_short)*ipn &lt;&lt; "." &lt;&lt; (u_short)*(ipn + 1) &lt;&lt; "." &lt;&lt; (u_short)*(ipn + 2) &lt;&lt; "." &lt;&lt; (u_short)*(ipn + 3) &lt;&lt; ":";</span></span><br><span class="line"><span class="comment">//    //byte* ipw = (byte*)&amp;ipW;</span></span><br><span class="line"><span class="comment">//    //cout &lt;&lt; (u_short)*ipw &lt;&lt; "." &lt;&lt; (u_short)*(ipw + 1) &lt;&lt; "." &lt;&lt; (u_short)*(ipw + 2) &lt;&lt; "." &lt;&lt; (u_short)*(ipw + 3) &lt;&lt; ":";</span></span><br><span class="line"><span class="comment">//    if (ipW) &#123;</span></span><br><span class="line"><span class="comment">//        if (ipW == 1) &#123;</span></span><br><span class="line"><span class="comment">//            ShowIpAndPort(portW, 0xB, 0);</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line"><span class="comment">//        else &#123;</span></span><br><span class="line"><span class="comment">//            ShowIpAndPort(portW, 0xB, 1);</span></span><br><span class="line"><span class="comment">//        &#125;</span></span><br><span class="line"><span class="comment">//    &#125;</span></span><br><span class="line"><span class="comment">//    ShowStat(stat);</span></span><br><span class="line"><span class="comment">//    cout &lt;&lt; pid &lt;&lt; endl;</span></span><br><span class="line"><span class="comment">//    ShowName(pid);</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">tcpSock</span> &#123;</span></span><br><span class="line">    u_short v1, v2;</span><br><span class="line">    u_int v3, v4, v5;</span><br><span class="line">&#125;TcpSock;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">tcp6Sock</span> &#123;</span></span><br><span class="line">    u_short v1, v2;</span><br><span class="line">    u_int v3, v4, v5, v6, v7, v8;</span><br><span class="line">&#125;Tcp6Sock;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowStat</span><span class="params">(<span class="keyword">int</span> stat)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">switch</span> (stat)</span><br><span class="line">    &#123;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"CLOSED "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"LISTENING "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"SYN_SENT "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"SYN_RECEIVED "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">5</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"ESTABLISHED "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">6</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"FIN_WAIT_1 "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">7</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"FIN_WAIT_2 "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">8</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"CLOSE_WAIT "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">9</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"CLOSING "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">10</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"LAST_ACK "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> <span class="number">11</span>:</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"TIME_WAIT "</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowName</span><span class="params">(<span class="keyword">int</span> pid)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> Name[<span class="number">40</span>] = &#123; <span class="string">'0'</span> &#125;;</span><br><span class="line">    HANDLE pH = OpenProcess(<span class="number">0x410</span>u, <span class="number">0</span>, pid);</span><br><span class="line">    <span class="keyword">if</span> (pH == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"无法获取!"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    GetModuleBaseNameA(pH, <span class="number">0</span>, (LPSTR)Name, <span class="number">256</span>);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; Name &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowTcpIpv4AndPort</span><span class="params">(u_int pid, u_short port)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> oIp[<span class="number">0x104</span>];</span><br><span class="line">    TcpSock* so = <span class="keyword">new</span> TcpSock;</span><br><span class="line">    <span class="built_in">memset</span>(so, <span class="number">0</span>, <span class="number">0x10</span>);</span><br><span class="line">    so-&gt;v1 = <span class="number">0x2</span>;</span><br><span class="line">    so-&gt;v2 = port;</span><br><span class="line">    so-&gt;v3 = pid;</span><br><span class="line">    getnameinfo((<span class="keyword">const</span> SOCKADDR*)so, <span class="number">0x10</span>, oIp, <span class="number">0x104</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0xb</span>);</span><br><span class="line">    u_short oPort = ntohs(port);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; oIp &lt;&lt; <span class="string">":"</span> &lt;&lt; oPort &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowTcpIpv6AndPort</span><span class="params">(<span class="keyword">int</span> *T, u_int pid, u_short port)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> oIp[<span class="number">0x104</span>];</span><br><span class="line">    Tcp6Sock* so = <span class="keyword">new</span> Tcp6Sock;</span><br><span class="line">    <span class="built_in">memset</span>(so, <span class="number">0</span>, <span class="number">0x1c</span>);</span><br><span class="line">    so-&gt;v1 = <span class="number">0x17</span>;</span><br><span class="line">    so-&gt;v2 = port;</span><br><span class="line">    so-&gt;v4 = T[<span class="number">0</span>];</span><br><span class="line">    so-&gt;v5 = T[<span class="number">1</span>];</span><br><span class="line">    so-&gt;v6 = T[<span class="number">2</span>];</span><br><span class="line">    so-&gt;v7 = T[<span class="number">3</span>];</span><br><span class="line">    so-&gt;v8 = pid;</span><br><span class="line">    getnameinfo((<span class="keyword">const</span> SOCKADDR*)so, <span class="number">0x1c</span>, oIp, <span class="number">0x104</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0xb</span>);</span><br><span class="line">    u_short oPort = ntohs(port);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; oIp &lt;&lt; <span class="string">":"</span> &lt;&lt; oPort &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowUdpIpv4AndPort</span><span class="params">(u_int pid, u_short port)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> oIp[<span class="number">0x104</span>];</span><br><span class="line">    TcpSock* so = <span class="keyword">new</span> TcpSock;</span><br><span class="line">    <span class="built_in">memset</span>(so, <span class="number">0</span>, <span class="number">0x10</span>);</span><br><span class="line">    so-&gt;v1 = <span class="number">0x2</span>;</span><br><span class="line">    so-&gt;v2 = port;</span><br><span class="line">    so-&gt;v3 = pid;</span><br><span class="line">    getnameinfo((<span class="keyword">const</span> SOCKADDR*)so, <span class="number">0x10</span>, oIp, <span class="number">0x104</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0x1b</span>);</span><br><span class="line">    u_short oPort = ntohs(port);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; oIp &lt;&lt; <span class="string">":"</span> &lt;&lt; oPort &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowUdpIpv6AndPort</span><span class="params">(<span class="keyword">int</span> *T, u_int pid, u_short port)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> oIp[<span class="number">0x104</span>];</span><br><span class="line">    Tcp6Sock* so = <span class="keyword">new</span> Tcp6Sock;</span><br><span class="line">    <span class="built_in">memset</span>(so, <span class="number">0</span>, <span class="number">0x1c</span>);</span><br><span class="line">    so-&gt;v1 = <span class="number">0x17</span>;</span><br><span class="line">    so-&gt;v2 = port;</span><br><span class="line">    so-&gt;v4 = T[<span class="number">0</span>];</span><br><span class="line">    so-&gt;v5 = T[<span class="number">1</span>];</span><br><span class="line">    so-&gt;v6 = T[<span class="number">2</span>];</span><br><span class="line">    so-&gt;v7 = T[<span class="number">3</span>];</span><br><span class="line">    so-&gt;v8 = pid;</span><br><span class="line">    getnameinfo((<span class="keyword">const</span> SOCKADDR*)so, <span class="number">0x1c</span>, oIp, <span class="number">0x104</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0x1b</span>);</span><br><span class="line">    u_short oPort = ntohs(port);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; oIp &lt;&lt; <span class="string">":"</span> &lt;&lt; oPort &lt;&lt; <span class="string">" "</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowTcpInformation</span><span class="params">(<span class="keyword">int</span> *Table)</span> </span>&#123;</span><br><span class="line">    ShowTcpIpv4AndPort(Table[<span class="number">1</span>], Table[<span class="number">2</span>]);</span><br><span class="line">    ShowTcpIpv4AndPort(Table[<span class="number">3</span>], Table[<span class="number">4</span>]);</span><br><span class="line">    ShowStat(Table[<span class="number">0</span>]);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; Table[<span class="number">5</span>] &lt;&lt;<span class="built_in">endl</span>;<span class="comment">//pid</span></span><br><span class="line">    ShowName(Table[<span class="number">5</span>]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowTcp6Information</span><span class="params">(<span class="keyword">int</span> *Table)</span> </span>&#123;</span><br><span class="line">    ShowTcpIpv6AndPort(Table, Table[<span class="number">6</span>], Table[<span class="number">5</span>]);</span><br><span class="line">    ShowTcpIpv6AndPort(Table, Table[<span class="number">10</span>], Table[<span class="number">11</span>]);</span><br><span class="line">    ShowStat(Table[<span class="number">12</span>]);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; Table[<span class="number">13</span>] &lt;&lt; <span class="built_in">endl</span>;<span class="comment">//pid</span></span><br><span class="line">    ShowName(Table[<span class="number">13</span>]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowUdpInformation</span><span class="params">(<span class="keyword">int</span> *Table)</span> </span>&#123;</span><br><span class="line">    ShowUdpIpv4AndPort(Table[<span class="number">0</span>], Table[<span class="number">1</span>]);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"*:*"</span> &lt;&lt; <span class="string">"   "</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; Table[<span class="number">2</span>] &lt;&lt; <span class="built_in">endl</span>;<span class="comment">//pid</span></span><br><span class="line">    ShowName(Table[<span class="number">2</span>]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">ShowUdp6Information</span><span class="params">(<span class="keyword">int</span> *Table)</span> </span>&#123;</span><br><span class="line">    ShowUdpIpv6AndPort(Table, Table[<span class="number">4</span>], Table[<span class="number">5</span>]);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"*:*"</span> &lt;&lt; <span class="string">"   "</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; Table[<span class="number">6</span>] &lt;&lt; <span class="built_in">endl</span>;<span class="comment">//pid</span></span><br><span class="line">    ShowName(Table[<span class="number">6</span>]);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"本地地址 外部地址 状态 PID"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    WSADATA wsaData = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="keyword">int</span> isResult = WSAStartup(MAKEWORD(<span class="number">2</span>, <span class="number">2</span>), &amp;wsaData);</span><br><span class="line">    <span class="keyword">if</span> (isResult != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"WSASTRATUP FAILED!"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> *lp = <span class="literal">NULL</span>;</span><br><span class="line">    LPCWSTR libraryName = <span class="string">L"IPHLPAPI.DLL"</span>;</span><br><span class="line">    HMODULE libraryM = LoadLibraryW(libraryName);</span><br><span class="line">    A* GetTcpTable = (A*)GetProcAddress(libraryM, <span class="string">"InternalGetTcpTableWithOwnerModule"</span>);</span><br><span class="line">    B* GetTcp6Table = (B*)GetProcAddress(libraryM, <span class="string">"InternalGetTcp6TableWithOwnerModule"</span>);</span><br><span class="line">    C* GetUdpTable = (C*)GetProcAddress(libraryM, <span class="string">"InternalGetUdpTableWithOwnerModule"</span>);</span><br><span class="line">    D* GetUdp6Table = (D*)GetProcAddress(libraryM, <span class="string">"InternalGetUdp6TableWithOwnerModule"</span>);</span><br><span class="line"></span><br><span class="line">    HANDLE hHeap = GetProcessHeap();</span><br><span class="line">    <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    GetTcpTable(&amp;lp, hHeap, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> TcpCnt = *lp;</span><br><span class="line">    <span class="keyword">int</span> *Tcp;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"[Tcp information.]"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">while</span>(TcpCnt--) &#123;</span><br><span class="line">        Tcp = lp + <span class="number">2</span> + index;</span><br><span class="line">        ShowTcpInformation(Tcp);</span><br><span class="line">        index += <span class="number">40</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    index = <span class="number">0</span>;</span><br><span class="line">    GetTcp6Table(&amp;lp, hHeap, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> Tcp6Cnt = *lp;    </span><br><span class="line">    <span class="keyword">int</span> *Tcp6;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"[Tcp6 information.]"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">while</span> (Tcp6Cnt--) &#123;</span><br><span class="line">        Tcp6 = lp + <span class="number">2</span> + index;</span><br><span class="line">        ShowTcp6Information(Tcp6);</span><br><span class="line">        index += <span class="number">48</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    index = <span class="number">0</span>;</span><br><span class="line">    GetUdpTable(&amp;lp, hHeap, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> UdpCnt = *lp;</span><br><span class="line">    <span class="keyword">int</span> *Udp;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"[Udp information.]"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">while</span> (UdpCnt--) &#123;</span><br><span class="line">        Udp = lp + <span class="number">2</span> + index;</span><br><span class="line">        ShowUdpInformation(Udp);</span><br><span class="line">        index += <span class="number">40</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    index = <span class="number">0</span>;</span><br><span class="line">    GetUdp6Table(&amp;lp, hHeap, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">int</span> Udp6Cnt = *lp;</span><br><span class="line">    <span class="keyword">int</span> *Udp6;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"[Udp6 information.]"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">while</span> (Udp6Cnt--) &#123;</span><br><span class="line">        Udp6 = index + <span class="number">2</span> + lp;</span><br><span class="line">        ShowUdp6Information(Udp6);</span><br><span class="line">        index += <span class="number">44</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/逆向/" rel="tag"># 逆向</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/23/fport逆向分析与实现/" rel="next" title="fport逆向分析与实现">
+                <i class="fa fa-chevron-left"></i> fport逆向分析与实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/04/02/Detours/" rel="prev" title="Detours简介">
+                Detours简介 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">John Doe</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

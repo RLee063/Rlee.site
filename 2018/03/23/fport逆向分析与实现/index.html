@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="逆向," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Fport是一个可以在winXP上实现查询端口信息功能的软件。   首先将文件拖入IDA分析，找到main函数，通过与OD动态分析结合，发现输出信息都在一个keyFunction里完成。  通过OD发现程序的主体逻辑大概是：Tcp和Udp操作类似，首先GetProcessHeap()获取当前堆，然后调用AllocateAndGetTcpExTableFromStack()，再将其返回信息送入wor">
+<meta name="keywords" content="逆向">
+<meta property="og:type" content="article">
+<meta property="og:title" content="fport逆向分析与实现">
+<meta property="og:url" content="http://yoursite.com/2018/03/23/fport逆向分析与实现/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Fport是一个可以在winXP上实现查询端口信息功能的软件。   首先将文件拖入IDA分析，找到main函数，通过与OD动态分析结合，发现输出信息都在一个keyFunction里完成。  通过OD发现程序的主体逻辑大概是：Tcp和Udp操作类似，首先GetProcessHeap()获取当前堆，然后调用AllocateAndGetTcpExTableFromStack()，再将其返回信息送入wor">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323154415312-1723706654.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323154714201-135180040.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323155232856-419694478.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323155347821-1871046562.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323164404429-878442263.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323164849229-2022489790.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323165026725-761350012.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323165320508-915996583.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323172437280-1745130811.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323173541710-2005767678.png">
+<meta property="og:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323180714060-680423512.png">
+<meta property="og:updated_time" content="2018-09-14T06:11:32.619Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="fport逆向分析与实现">
+<meta name="twitter:description" content="Fport是一个可以在winXP上实现查询端口信息功能的软件。   首先将文件拖入IDA分析，找到main函数，通过与OD动态分析结合，发现输出信息都在一个keyFunction里完成。  通过OD发现程序的主体逻辑大概是：Tcp和Udp操作类似，首先GetProcessHeap()获取当前堆，然后调用AllocateAndGetTcpExTableFromStack()，再将其返回信息送入wor">
+<meta name="twitter:image" content="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323154415312-1723706654.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/23/fport逆向分析与实现/"/>
+
+
+
+
+
+  <title>fport逆向分析与实现 | Hexo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/23/fport逆向分析与实现/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">fport逆向分析与实现</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-23T23:29:20+09:00">
+                2018-03-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/自娱自乐/" itemprop="url" rel="index">
+                    <span itemprop="name">自娱自乐</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Fport是一个可以在winXP上实现查询端口信息功能的软件。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323154415312-1723706654.png" alt=""></p>
+<hr>
+<p>首先将文件拖入IDA分析，找到main函数，通过与OD动态分析结合，发现输出信息都在一个keyFunction里完成。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323154714201-135180040.png" alt=""></p>
+<p>通过OD发现程序的主体逻辑大概是：Tcp和Udp操作类似，首先GetProcessHeap()获取当前堆，然后调用AllocateAndGetTcpExTableFromStack()，再将其返回信息送入workFunc()加工，最后由msgShow()输出到屏幕上。通过MSDN上查询可以知道：</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323155232856-419694478.png" alt=""></p>
+<p>GetProcessHeap 返回当前进程堆句柄。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323155347821-1871046562.png" alt=""></p>
+<p>【垃圾博客园写了一大堆没有保存按到鼠标全部没有了！！！！心态爆炸】</p>
+<p>　　API的功能是获取Tcp信息，第一个参数是一个指针，存放指向返回的tcpTable的指针，第三个参数是getProcessHeap返回的handle，其他都是立即数。经过调试发现，输出的pid和port信息全在tcpTable里面，通过输出和对workFunc的传参发现该表中结构体占4X6个字节，最后4个字节存放pid，9、10字节存放大端方式的port值。所以大胆推测workFunc只是对信息作一定的处理，最后方便msgShow统一地进行输出。进入workFunc验证</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323164404429-878442263.png" alt=""></p>
+<p>看到根据pid获取程序名称，地址（zaigetFileAddress中）的功能也在此实现，stringFunc1应该就是对输出信息的处理。至此想要写出同样功能的程序我们只需要调用一次AllocateAndGetTcpExTableFromStack()即可，但是老师的意思似乎是要让我们分析这个API，于是要进到函数中去。（AllocateAndGetTcpExTableFromStack()是iphlpdll.dll里的）</p>
+<p><strong>进入AllocateAndGetTcpExTableFromStack()</strong></p>
+<p>　　ps:最开始的时候不知道IDA静态分析dll，用OD动态分析吃了不少苦头不过也增强了看汇编代码的能力。附上几张草稿纸</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323164849229-2022489790.png" alt=""></p>
+<p>由于最终目的是要写出同样功能的程序，所以只需要获得所有API的调用情况以及具体参数就可以了。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323165026725-761350012.png" alt=""></p>
+<p>函数的关系情况，initUnicodeString为createFile提供文件名，createEvent()为zwDeviceIoControlFile()提供handle，第一次调用的返回值为allocateHeap提供大小，第二次调用zwDeviceIoControlFile()返回了tcpTable于是zwDeviceIoControlFile()就是关键API，搞定了它的参数就可以获得pid和port。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323165320508-915996583.png" alt=""></p>
+<p>看上去这是一个和硬件打交道的API，从第二个参数开始讲起，Event就是CreateEvent返回的handle，第三四个是立即数0，第五个是指向PIO_STATUS_BLOCK的指针，这儿没有用，第六个看名字就知道比较关键在此是0x120003，后两个也比较关键Inputbuffer，告诉Api你想要做什么，都是立即数轻易获取，每次调用都不一样，长度是固定的值0x24，outputBuffer也很关键，返回的东西就存在里面，第一次调用长度固定0x3c，allocate长度位于返回buffer最后一个字节，由一系列奇怪的计算获得。第二次传入的参数也就是allocateHeap的长度。</p>
+<p>第一个参数Filehandle，由CreateFile返回，看到函数调用关系，每次调用DeviceIoControlFile之前都有CreateFile操作，理所应当的觉得这个参数由之前的createFile决定，但是动态分析的时候发现并不是这样，CreateFIle并没有返回句柄，而且zwDeviceIoControlFile用的是一个全局变量0x3c，这就很奇怪了，那要CreateFIle函数有什么用，全程都没用到。尝试nop掉其中所有对CreateFile的调用，程序居然能够正常出结果！猜测：第一个参数是一个固定的数值0x3c。</p>
+<p>于是准备开始写自己的第一版程序，首先是工具，直接用WIN10上面VS2015写出来的程序被报错：不是有效的win32应用程序，于是在设置IDE的时候遇到了一连串的问题，不详细讲了只大概列出来：</p>
+<ul>
+<li>API函数未定义</li>
+<li>API头文件找不到</li>
+<li>API符号解析出错，有头文件没有实现，也就是说缺失lib</li>
+<li>缺失xp工具集</li>
+<li>找不到dll</li>
+<li>缺失lib【最后去偷了一个lib居然成了】</li>
+<li>…</li>
+</ul>
+<p>　第一版程序大概就实现了调用zwDeviceIoControlFile，但是！重点！但是！我没有实现createFile，因为我觉得它没用啊，没用我为什么要实现，但发现调用了之后outputBuffer啥都没有你说气人不气人，这个程序不能在win10上跑，所以只能用OD调试，最开始以为是PIO_STATUS_BLOCK的错误，因为我偷懒传递了个null，但后来发现并不是这样，我坚决不加createFile上去，因为在loadLibrabry、getProcAddress之后就直接到了allocateAndGetTcpExTableFromStack()，期间也没有机会调用这个函数，我把他nop之后能够执行说明他并没有什么亂用。</p>
+<p>　　后来经过一系列的机缘巧合，我不小心在createFile里面打了一个断点，然后惊人的发现在loadLibrary的时候居然执行了这个函数，而且全局变量0x3c就是在这个时候赋值的（以前看到loadLibrary之后该变量地址就是0x3c坚定的认为他是一个死值），然后手写了一个createFile返回handle供ntDeviceIoControlFile调用就成功返回了。</p>
+<p>　　返回的Tcp表是乱序的，api里用一个qsort进行排序，觉得没必要，想着能得到pid和port就行了还要啥自行车啊，没想到埋下了祸根。</p>
+<p>　　事故发生的时候，我刚把Udp的部分写完，原理和Tcp类似，获取pid的算法不一样。</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323172437280-1745130811.png" alt=""></p>
+<p>输出Tcp时候pid和port都是去TcpTable里面找，但是输出Udp的时候pid是在Tcp里找的意思是和Tcp输出时的pid一样，port是在UdpTable里找的。这个时候因为他的是排过序的，我的没有排过序，所以我的程序Udp输出的pid和port对应与他的不一样。</p>
+<p>　　又是机缘巧合之下发现IDE可以用来分析dll，于是赶紧拖进去看看cmp函数怎么写的</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">CompareTcp6Row</span><span class="params">(<span class="keyword">int</span> a1, <span class="keyword">int</span> a2)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax</span></span><br><span class="line">  <span class="keyword">int</span> v3; <span class="comment">// eax</span></span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// ecx</span></span><br><span class="line">  <span class="keyword">int</span> v5; <span class="comment">// esi</span></span><br><span class="line">  <span class="keyword">int</span> v6; <span class="comment">// esi</span></span><br><span class="line">  <span class="keyword">int</span> v7; <span class="comment">// edi</span></span><br><span class="line"></span><br><span class="line">  result = <span class="built_in">memcmp</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)a1, (<span class="keyword">const</span> <span class="keyword">char</span> *)a2, <span class="number">16</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !result )</span><br><span class="line">  &#123;</span><br><span class="line">    v3 = *(_DWORD *)(a1 + <span class="number">16</span>);</span><br><span class="line">    v4 = *(_DWORD *)(a2 + <span class="number">16</span>);</span><br><span class="line">    <span class="keyword">if</span> ( v3 != v4 )</span><br><span class="line">      <span class="keyword">return</span> v3 - v4;</span><br><span class="line">    v5 = ntohs(*(_WORD *)(a1 + <span class="number">20</span>));</span><br><span class="line">    v6 = v5 - ntohs(*(_WORD *)(a2 + <span class="number">20</span>));</span><br><span class="line">    <span class="keyword">if</span> ( v6 )</span><br><span class="line">      <span class="keyword">return</span> v6;</span><br><span class="line">    result = <span class="built_in">memcmp</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)(a1 + <span class="number">24</span>), (<span class="keyword">const</span> <span class="keyword">char</span> *)(a2 + <span class="number">24</span>), <span class="number">16</span>);</span><br><span class="line">    <span class="keyword">if</span> ( !result )</span><br><span class="line">    &#123;</span><br><span class="line">      v3 = *(_DWORD *)(a1 + <span class="number">40</span>);</span><br><span class="line">      v4 = *(_DWORD *)(a2 + <span class="number">40</span>);</span><br><span class="line">      <span class="keyword">if</span> ( v3 != v4 )</span><br><span class="line">        <span class="keyword">return</span> v3 - v4;</span><br><span class="line">      v7 = ntohs(*(_WORD *)(a1 + <span class="number">44</span>));</span><br><span class="line">      result = v7 - ntohs(*(_WORD *)(a2 + <span class="number">44</span>));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> __<span class="function">cdecl <span class="title">CompareUdp6Row</span><span class="params">(<span class="keyword">int</span> a1, <span class="keyword">int</span> a2)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax</span></span><br><span class="line">  <span class="keyword">int</span> v3; <span class="comment">// eax</span></span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// ecx</span></span><br><span class="line">  <span class="keyword">int</span> v5; <span class="comment">// edi</span></span><br><span class="line"></span><br><span class="line">  result = <span class="built_in">memcmp</span>((<span class="keyword">const</span> <span class="keyword">char</span> *)a1, (<span class="keyword">const</span> <span class="keyword">char</span> *)a2, <span class="number">16</span>);</span><br><span class="line">  <span class="keyword">if</span> ( !result )</span><br><span class="line">  &#123;</span><br><span class="line">    v3 = *(_DWORD *)(a1 + <span class="number">16</span>);</span><br><span class="line">    v4 = *(_DWORD *)(a2 + <span class="number">16</span>);</span><br><span class="line">    <span class="keyword">if</span> ( v3 == v4 )</span><br><span class="line">    &#123;</span><br><span class="line">      v5 = ntohs(*(_WORD *)(a1 + <span class="number">20</span>));</span><br><span class="line">      result = v5 - ntohs(*(_WORD *)(a2 + <span class="number">20</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      result = v3 - v4;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其实这个时候我并没有什么闲心看他，因为我发现这个秘密的时候我也大胆推测得差不多了，知道现在我也没有闲心看他。</p>
+<p>　　大胆推测：tcp表按照port升序，udp表首先前四字节升序，再按port升序，这样有一个疑问</p>
+<p>　　当Udp表规模比Tcp表大的时候，取到的pid值其实已经超出了tcpTable的有效区域，事实也就是这样</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323173541710-2005767678.png" alt=""></p>
+<p>那些6553646和0就是垃圾值。一度怀疑fport本身算法有问题。</p>
+<p>附一张自己的程序运行结果：</p>
+<p><img src="https://images2018.cnblogs.com/blog/1334944/201803/1334944-20180323180714060-680423512.png" alt=""></p>
+<p>以及源代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;Windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;WinBase.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;ntstatus.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;winternl.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;psapi.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line">HANDLE pH;</span><br><span class="line"><span class="keyword">int</span> TcpCnt;</span><br><span class="line"><span class="keyword">int</span> UdpCnt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">TcpTable</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> v1, v2, v3, v4, v5, v6;</span><br><span class="line">&#125;TcpTable;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">UdpTable</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> v1, v2, v3;</span><br><span class="line">&#125;UdpTable;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">DtoX</span><span class="params">(<span class="keyword">int</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> (((value &amp; <span class="number">0x000000FF</span>) &lt;&lt; <span class="number">24</span>) | ((value &amp; <span class="number">0x0000FF00</span>) &lt;&lt; <span class="number">8</span>) |</span><br><span class="line">        ((value &amp; <span class="number">0x00FF0000</span>) &gt;&gt; <span class="number">8</span>) |</span><br><span class="line">        ((value &amp; <span class="number">0xFF000000</span>) &gt;&gt; <span class="number">24</span>)) &gt;&gt; <span class="number">16</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">cmpTcp</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span>* v1, <span class="keyword">const</span> <span class="keyword">void</span>* v2)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a1 = DtoX((*(TcpTable*)v1).v3);</span><br><span class="line">    <span class="keyword">int</span> a2 = DtoX((*(TcpTable*)v2).v3);</span><br><span class="line">    <span class="keyword">if</span> (a1 &lt; a2)</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">cmpUdp</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span>* v1, <span class="keyword">const</span> <span class="keyword">void</span>* v2)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> ((<span class="keyword">const</span> <span class="keyword">int</span>)((*(UdpTable*)v1).v1) &lt; (<span class="keyword">const</span> <span class="keyword">int</span>)((*(UdpTable *)v2).v1)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ((<span class="keyword">const</span> <span class="keyword">int</span>)((*(UdpTable*)v1).v1) &gt; (<span class="keyword">const</span> <span class="keyword">int</span>)((*(UdpTable *)v2).v1)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> a1 = DtoX((*(UdpTable*)v1).v2);</span><br><span class="line">    <span class="keyword">int</span> a2 = DtoX((*(UdpTable*)v2).v2);</span><br><span class="line">    <span class="keyword">if</span> (a1 &lt; a2) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">GetTableFromStack</span><span class="params">(<span class="keyword">int</span> * inputBuffer, <span class="keyword">int</span> * outputBuffer, <span class="keyword">int</span> outputBufferLength)</span> </span>&#123;</span><br><span class="line">    HANDLE eventhandle = CreateEvent(<span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (eventhandle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Create event error"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    IO_STATUS_BLOCK iostatus_block;</span><br><span class="line">    NtDeviceIoControlFile(pH, eventhandle, <span class="number">0</span>, <span class="number">0</span>, &amp;iostatus_block, <span class="number">0x120003</span>, inputBuffer, <span class="number">0x24</span>, outputBuffer, outputBufferLength);</span><br><span class="line">    CloseHandle(eventhandle);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> * <span class="title">AllocateAndGetUdpTable</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> input1[<span class="number">9</span>] = &#123; <span class="number">0x401</span>, <span class="number">0</span>, <span class="number">0x200</span>, <span class="number">0x100</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="keyword">int</span> input2[<span class="number">9</span>] = &#123; <span class="number">0x401</span>, <span class="number">0</span>, <span class="number">0x200</span>, <span class="number">0x100</span>, <span class="number">0x102</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="keyword">int</span> output1[<span class="number">5</span>] = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">    GetTableFromStack(input1, output1, <span class="number">0x14</span>);</span><br><span class="line">    UdpCnt = output1[<span class="number">4</span>];</span><br><span class="line">    <span class="keyword">int</span> TableSize = ((UdpCnt+ <span class="number">0xA</span>) * <span class="number">3</span> + <span class="number">3</span>) * <span class="number">4</span> - <span class="number">4</span>;</span><br><span class="line">    <span class="keyword">int</span> * ptrToTable = (<span class="keyword">int</span> *)<span class="built_in">malloc</span>(TableSize);</span><br><span class="line">    GetTableFromStack(input2, ptrToTable, TableSize);</span><br><span class="line">    <span class="comment">//qsort();</span></span><br><span class="line">    <span class="keyword">return</span> ptrToTable;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> * <span class="title">AllocateAndGetTcpTable</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> input1[<span class="number">9</span>] = &#123; <span class="number">0x400</span>, <span class="number">0</span>, <span class="number">0x200</span>, <span class="number">0x100</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="keyword">int</span> input2[<span class="number">9</span>] = &#123; <span class="number">0x400</span>, <span class="number">0</span>, <span class="number">0x200</span>, <span class="number">0x100</span>, <span class="number">0x102</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span> &#125;;</span><br><span class="line">    <span class="keyword">int</span> output1[<span class="number">15</span>] = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">    GetTableFromStack(input1, output1, <span class="number">0x3c</span>);</span><br><span class="line">    TcpCnt = output1[<span class="number">14</span>];</span><br><span class="line">    <span class="keyword">int</span> TableSize = (TcpCnt + <span class="number">0xA</span>) * <span class="number">24</span> + <span class="number">0xc</span> - <span class="number">4</span>;</span><br><span class="line">    <span class="keyword">int</span> * ptrToTable = (<span class="keyword">int</span> *)<span class="built_in">malloc</span>(TableSize);</span><br><span class="line">    GetTableFromStack(input2, ptrToTable, TableSize);</span><br><span class="line">    <span class="comment">//qsort();</span></span><br><span class="line">    <span class="keyword">return</span> ptrToTable;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">OpenTcpDriver</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    IO_STATUS_BLOCK ioStB;</span><br><span class="line">    PCWSTR sourceString = <span class="string">L"\\Device\\Tcp"</span>;</span><br><span class="line">    UNICODE_STRING DestinationString;</span><br><span class="line">    RtlInitUnicodeString(&amp;DestinationString, sourceString);</span><br><span class="line">    OBJECT_ATTRIBUTES objAtt;</span><br><span class="line">    objAtt.ObjectName = &amp;DestinationString;</span><br><span class="line">    objAtt.Length = <span class="number">24</span>;</span><br><span class="line">    objAtt.RootDirectory = <span class="number">0</span>;</span><br><span class="line">    objAtt.Attributes = <span class="number">64</span>;</span><br><span class="line">    objAtt.SecurityDescriptor = <span class="number">0</span>;</span><br><span class="line">    objAtt.SecurityQualityOfService = <span class="number">0</span>;</span><br><span class="line">    NtCreateFile(&amp;pH, <span class="number">0x20000000</span>u, &amp;objAtt, &amp;ioStB, <span class="number">0</span>, <span class="number">0x80</span>u, <span class="number">3u</span>, <span class="number">3u</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">showInformation</span><span class="params">(<span class="keyword">int</span> pid, <span class="keyword">int</span> port)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span> ProcessName[<span class="number">28</span>] = &#123; <span class="string">'0'</span> &#125;;</span><br><span class="line">    <span class="keyword">char</span> Path[<span class="number">409</span>] = &#123; <span class="string">'0'</span> &#125;;</span><br><span class="line">    <span class="keyword">char</span> PathA[<span class="number">409</span>] = &#123; <span class="string">'0'</span> &#125;;</span><br><span class="line">    HMODULE hModule = <span class="number">0</span>;</span><br><span class="line">    HMODULE hModule2 = <span class="number">0</span>;</span><br><span class="line">    LPDWORD cbNeeded = <span class="number">0</span>;</span><br><span class="line">    LPDWORD cbNeeded2 = <span class="number">0</span>;</span><br><span class="line">    HANDLE processH = OpenProcess(<span class="number">0x410</span>u, <span class="number">0</span>, pid);</span><br><span class="line">    <span class="keyword">if</span> (processH) &#123;</span><br><span class="line">        <span class="keyword">if</span> (EnumProcessModules(processH, &amp;hModule, <span class="number">0x28</span>u, (LPDWORD)&amp;cbNeeded)) &#123;</span><br><span class="line">            <span class="keyword">if</span> (GetModuleBaseNameA(processH, hModule, (LPSTR)ProcessName, <span class="number">0x78</span>u)) &#123;</span><br><span class="line">                HANDLE processH2 = OpenProcess(<span class="number">0x410</span>u, <span class="number">0</span>, pid);</span><br><span class="line">                <span class="keyword">if</span> (processH2) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (EnumProcessModules(processH2, &amp;hModule, <span class="number">4096</span>, (LPDWORD)&amp;cbNeeded2)) &#123;</span><br><span class="line">                        GetModuleFileNameEx(processH2, hModule2, (LPTSTR)Path, <span class="number">260</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                    CloseHandle(processH2);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            CloseHandle(processH);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, (LPCWSTR)Path, <span class="number">-1</span>, (LPSTR)PathA, <span class="number">409</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">" pid: "</span> &lt;&lt; pid &lt;&lt; <span class="string">" port: "</span> &lt;&lt; port &lt;&lt; <span class="string">" ProcessName: "</span> &lt;&lt; ProcessName &lt;&lt; <span class="string">" Path: "</span> &lt;&lt; PathA &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    OpenTcpDriver();</span><br><span class="line">    <span class="keyword">int</span> * pToTcpTable = AllocateAndGetTcpTable();</span><br><span class="line">    qsort(pToTcpTable, TcpCnt, <span class="number">24</span>, cmpTcp);</span><br><span class="line">    <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"TCP information:"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">while</span> (TcpCnt--) &#123;</span><br><span class="line">        <span class="keyword">int</span> pid = pToTcpTable[index + <span class="number">5</span>];</span><br><span class="line">        <span class="keyword">int</span> port = DtoX(pToTcpTable[index + <span class="number">2</span>]);</span><br><span class="line">        showInformation(pid, port);</span><br><span class="line">        index += <span class="number">6</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">int</span> * pToUdpTable = AllocateAndGetUdpTable();</span><br><span class="line">    qsort(pToUdpTable, UdpCnt, <span class="number">12</span>, cmpUdp);</span><br><span class="line">    index = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> index2 = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"Udp information:"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">while</span> (UdpCnt--) &#123;</span><br><span class="line">        <span class="keyword">int</span> pid = pToTcpTable[index + <span class="number">5</span>];</span><br><span class="line">        <span class="keyword">int</span> port = DtoX(pToUdpTable[index2 + <span class="number">1</span>]);</span><br><span class="line">        showInformation(pid, port);</span><br><span class="line">        index2 += <span class="number">3</span>;</span><br><span class="line">        index += <span class="number">6</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/逆向/" rel="tag"># 逆向</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/07/计算机系统基础-Mooc笔记/" rel="next" title="<计算机系统基础>Mooc笔记">
+                <i class="fa fa-chevron-left"></i> <计算机系统基础>Mooc笔记
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/26/netStat逆向分析与实现/" rel="prev" title="netStat逆向分析与实现">
+                netStat逆向分析与实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">John Doe</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

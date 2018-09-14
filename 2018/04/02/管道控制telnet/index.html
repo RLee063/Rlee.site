@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="逆向," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言 上一篇随笔介绍了如何通过管道控制一个程序，但是这一套在控制telnet的时候意外失效了，CreateProcess执行之后telnet闪退了。 问题分析不修改标准输入输出的话CreateProcess之后程序能被正常执行，可以判断是修改了标准输入输出句柄导致的。为了得到更多信息，用IDA打开telnet分析，找出使程序闪退的语句。  mian函数的主体逻辑如上，程序最开始调用了GetStdH">
+<meta name="keywords" content="逆向">
+<meta property="og:type" content="article">
+<meta property="og:title" content="管道控制telnet">
+<meta property="og:url" content="http://yoursite.com/2018/04/02/管道控制telnet/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="前言 上一篇随笔介绍了如何通过管道控制一个程序，但是这一套在控制telnet的时候意外失效了，CreateProcess执行之后telnet闪退了。 问题分析不修改标准输入输出的话CreateProcess之后程序能被正常执行，可以判断是修改了标准输入输出句柄导致的。为了得到更多信息，用IDA打开telnet分析，找出使程序闪退的语句。  mian函数的主体逻辑如上，程序最开始调用了GetStdH">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://wx1.sinaimg.cn/mw690/006xBYIFgy1fpzs8btpfrj30uu0hqdhc.jpg">
+<meta property="og:updated_time" content="2018-09-14T06:22:53.516Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="管道控制telnet">
+<meta name="twitter:description" content="前言 上一篇随笔介绍了如何通过管道控制一个程序，但是这一套在控制telnet的时候意外失效了，CreateProcess执行之后telnet闪退了。 问题分析不修改标准输入输出的话CreateProcess之后程序能被正常执行，可以判断是修改了标准输入输出句柄导致的。为了得到更多信息，用IDA打开telnet分析，找出使程序闪退的语句。  mian函数的主体逻辑如上，程序最开始调用了GetStdH">
+<meta name="twitter:image" content="https://wx1.sinaimg.cn/mw690/006xBYIFgy1fpzs8btpfrj30uu0hqdhc.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/04/02/管道控制telnet/"/>
+
+
+
+
+
+  <title>管道控制telnet | Hexo</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hexo</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/02/管道控制telnet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">管道控制telnet</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-02T22:44:00+09:00">
+                2018-04-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/自娱自乐/" itemprop="url" rel="index">
+                    <span itemprop="name">自娱自乐</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><strong>前言</strong></p>
+<p>上一篇随笔介绍了如何通过管道控制一个程序，但是这一套在控制<strong>telnet</strong>的时候意外失效了，CreateProcess执行之后telnet闪退了。</p>
+<h3 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h3><p>不修改标准输入输出的话CreateProcess之后程序能被正常执行，可以判断是修改了标准输入输出句柄导致的。为了得到更多信息，用IDA打开telnet分析，找出使程序闪退的语句。</p>
+<p><img src="https://wx1.sinaimg.cn/mw690/006xBYIFgy1fpzs8btpfrj30uu0hqdhc.jpg" alt="321"></p>
+<p>mian函数的主体逻辑如上，程序最开始调用了GetStdHandle()，并且通过返回值判断是否退出程序，这很关键</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Retrieves a handle to the specified standard device (standard input, standard output, or standard error).</span></span><br><span class="line"><span class="function">HANDLE WINAPI <span class="title">GetStdHandle</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_ DWORD nStdHandle</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>函数返回当前的标准输入输出句柄，由于我们已经用管道替换了，所以返回的应该是我们管道的句柄，通过写一个测试程序可以测试到返回的句柄确实是我们的管道句柄。<br>所以程序并不在最开始的判断处退出。<br>为了更快定位到出错的地方，用GetExitCodeProcess()获得程序返回的值。(然而后来发现这里直接测试下一个函数更快)</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//Retrieves the termination status of the specified process.</span></span><br><span class="line"><span class="function">BOOL WINAPI <span class="title">GetExitCodeProcess</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_  HANDLE  hProcess,</span></span></span><br><span class="line"><span class="function"><span class="params">  _Out_ LPDWORD lpExitCode</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>程序运行中就返回259，其余的数值就是程序退出时的返回值，telnet的错误返回值是-1。回到程序代码，在main中返回-1的话只剩下GetConsoleScreenBufferInfo()函数返回0这一种可能，当然程序在其他地方也可以通过exit(-1)来使程序退出并且返回-1，在IDA中搜索exit并没有发现其他可疑的地方，大胆猜测就是这儿了好吧。写一个测试程序发现果然GetConsoleScreenBufferInfo()不认传进去的管道句柄。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//</span></span><br><span class="line">Retrieves information about the specified console screen buffer.</span><br><span class="line"><span class="function">BOOL WINAPI <span class="title">GetConsoleScreenBufferInfo</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_  HANDLE                      hConsoleOutput,</span></span></span><br><span class="line"><span class="function"><span class="params">  _Out_ PCONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>在函数的介绍页面上并没有看见为什么传管道句柄不行，但是在writeConsole()的介绍里发现writeConsole()在传入的句柄是重定向到其他文件的句柄时会失败，猜测就是这样，因为telnet采用对console的write和read一系列操作，而cmd采用的是writeFile类似的操作。</p>
+<blockquote>
+<p>WriteConsole fails if it is used with a standard handle that is redirected to a file. If an application processes multilingual output that can be redirected, determine whether the output handle is a console handle (one method is to call the GetConsoleMode function and check whether it succeeds). If the handle is a console handle, call WriteConsole. If the handle is not a console handle, the output is redirected and you should call WriteFile to perform the I/O. Be sure to prefix a Unicode plain text file with a byte order mark. For more information, see Using Byte Order Marks.</p>
+</blockquote>
+<p>同时也说，可以通过CreateFile返回标准输入输出句柄，于是</p>
+<h3 id="解决方案1"><a href="#解决方案1" class="headerlink" title="解决方案1"></a>解决方案1</h3><p>大致思路呢就是不再创建管道，而通过CreateFile创建能够返回标准输入输出句柄的文件来控制telnet，其中主要解决两个问题：1)让telnet不会因为该句柄而拒绝 2)能够通过句柄来控制</p>
+<p><strong>让telnet接受</strong></p>
+<p>最开始设置telnet的句柄为CreateFile返回的句柄的时候，惊人的被拒绝了，没理由啊，在测试程序里都能接受，难道程序是被调用的就不行了？后来偶然发现在CreateProcess的时候添加一个flag <strong>CREATE_NEW_CONSOLE</strong> 就可以了。</p>
+<font color="red" size="3" face="微软雅黑">这个地方其实没有搞懂为什么，也为后面埋下伏笔.</font>
+
+<p><strong>控制</strong></p>
+<p>似乎不能用WriteFile和ReadFile来使用标准的返回的句柄，但是查询MSDN可以发现可以通过writeConsoleInput()和ReadOutputBufferCharacters()来实现写入和读出管道类似的功能。ReadOutputBufferCharacters()亲自测试确实能够返回，但是在测试writeConsoleInput()之前陷入了沉思。</p>
+<p>很奇怪我明明给被调用程序传的是新建的句柄，但是它还是会在控制程序的console上抢输入输出。MSDN上说如果不新建console就是会抢输入输出，但是我新建console就不接受我的句柄，好像事情变得困难了起来，秉承避重就轻的思想，我放弃了这一条路</p>
+<font color="red" size="3" face="微软雅黑">有兴趣的话可以按照我这一条路实现下去，或者你对console有见解，知道我的问题出在哪里也可以告诉我。</font>
+
+<h3 id="解决方案2"><a href="#解决方案2" class="headerlink" title="解决方案2"></a>解决方案2</h3><p>（这条路才是老师想让我们走的路吧喂）仍旧是传入管道句柄通过管道控制，通过HOOK WIN32 API的方式，将基于console的操作变为基于file就好了。<br>实现的方法有很多，我给出一个思路：1)hook所有与write和read相关的api，重定向到管道上去 2)hook getStdHandle让他返回createFile新建的句柄用来应付其他console相关的函数，但是由于write和read需要获取管道句柄，但管道句柄通过getStdHandle返回，所以根据调用getStdHandle的次序返回不同的Handle。搜索发现telnet中只有最开始调用了getStdHandle，那么很简单，第二次以后函数正常工作，第一次第二次就调用createFile创建。<br>emmm说起来很简单，但是想这个逻辑还是花了一点时间，比如最开始想要找到存放handle的全局变量。<br>hook工具使用Detours，有关Detours的介绍传送门：<a href="http://www.cnblogs.com/rlee063/p/8695049.html" target="_blank" rel="noopener">detours的简介与简单使用</a></p>
+<h4 id="贴代码咯"><a href="#贴代码咯" class="headerlink" title="贴代码咯"></a>贴代码咯</h4><p><strong>control</strong><br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;Windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;detours.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">createShell</span><span class="params">(HANDLE * readH, HANDLE * writeH, PROCESS_INFORMATION * pi)</span> </span>&#123;</span><br><span class="line">	SECURITY_ATTRIBUTES sa = &#123; <span class="number">0</span> &#125;;</span><br><span class="line">	sa.nLength = <span class="keyword">sizeof</span>(sa);</span><br><span class="line">	sa.lpSecurityDescriptor = <span class="literal">NULL</span>;</span><br><span class="line">	sa.bInheritHandle = TRUE;</span><br><span class="line"></span><br><span class="line">	HANDLE rh1, wh1, rh2, wh2;</span><br><span class="line">	<span class="keyword">if</span> (!CreatePipe(&amp;rh1, &amp;wh1, &amp;sa, <span class="number">1024</span>)) &#123;<span class="comment">//outputpipe</span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (!CreatePipe(&amp;rh2, &amp;wh2, &amp;sa, <span class="number">1024</span>)) &#123;<span class="comment">//input pipe</span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	*readH = rh1;</span><br><span class="line">	*writeH = wh2;</span><br><span class="line"></span><br><span class="line">	STARTUPINFOA  si;</span><br><span class="line">	<span class="built_in">memset</span>(&amp;si, <span class="number">0</span>, <span class="keyword">sizeof</span>(si));</span><br><span class="line">	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;</span><br><span class="line">	si.wShowWindow = SW_HIDE;</span><br><span class="line">	si.hStdInput = rh2;<span class="comment">//rh2</span></span><br><span class="line">	si.hStdOutput = wh1;<span class="comment">//wh1</span></span><br><span class="line">	si.hStdError = wh1;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!DetourCreateProcessWithDllA(<span class="literal">NULL</span>, <span class="string">"C:\\Users\\hasee\\Desktop\\tellnet\\telnet.exe"</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, TRUE, NORMAL_PRIORITY_CLASS|CREATE_NEW_CONSOLE, <span class="literal">NULL</span>, <span class="literal">NULL</span>, &amp;si, pi, <span class="string">"D:\\Visual_studio_test\\VirusExcercise\\Fortelnet\\detoursTest3\\Debug\\detoursTest3.dll"</span>, <span class="literal">NULL</span>)) &#123;</span><br><span class="line">		<span class="built_in">cout</span> &lt;&lt; <span class="string">"CreateProcess error!"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">printMsg</span><span class="params">(HANDLE readH)</span> </span>&#123;</span><br><span class="line">	WCHAR output[<span class="number">1024</span>] = &#123; <span class="string">'\0'</span> &#125;;</span><br><span class="line">	CHAR outputA[<span class="number">1024</span>] = &#123; <span class="string">'\0'</span> &#125;;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">long</span> n;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">		<span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">			<span class="keyword">if</span> (!PeekNamedPipe(readH, <span class="literal">NULL</span>, <span class="number">0</span>, <span class="literal">NULL</span>, &amp;n, <span class="literal">NULL</span>)) &#123;</span><br><span class="line">				<span class="built_in">cout</span> &lt;&lt; <span class="string">"cannot get msg"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> (n == <span class="number">0</span>) </span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> (!ReadFile(readH, output, n, &amp;n, <span class="literal">NULL</span>)) &#123;</span><br><span class="line">				<span class="built_in">cout</span> &lt;&lt; <span class="string">"cannot read file"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			output[n] = <span class="literal">NULL</span>;</span><br><span class="line">			WideCharToMultiByte(CP_ACP, <span class="number">0</span>, output, <span class="number">-1</span>, outputA, n, <span class="literal">NULL</span>, FALSE);</span><br><span class="line">			<span class="built_in">cout</span> &lt;&lt; outputA ;</span><br><span class="line">		&#125;</span><br><span class="line">		Sleep(<span class="number">100</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	HANDLE input = GetStdHandle(STD_INPUT_HANDLE);</span><br><span class="line">	HANDLE readH, writeH;</span><br><span class="line">	CHAR output[<span class="number">1024</span>];</span><br><span class="line"></span><br><span class="line">	output[<span class="number">1023</span>] = <span class="string">'\0'</span>;</span><br><span class="line">	u_long n2;</span><br><span class="line">	PROCESS_INFORMATION pi;</span><br><span class="line">	<span class="keyword">if</span> (!createShell(&amp;readH, &amp;writeH, &amp;pi)) &#123;</span><br><span class="line">		system(<span class="string">"pause"</span>);</span><br><span class="line">		<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line"> 	printMsg(readH);</span><br><span class="line">	WCHAR * cmd = <span class="keyword">new</span> WCHAR[<span class="number">1024</span>];</span><br><span class="line">	u_long n;</span><br><span class="line">	<span class="keyword">int</span> Ecode;</span><br><span class="line">	COORD a;</span><br><span class="line">	a.X = <span class="number">0</span>;</span><br><span class="line">	a.Y = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">	WCHAR *tempB[<span class="number">1024</span>];</span><br><span class="line"></span><br><span class="line">	<span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">		ReadConsoleW(input, cmd, <span class="number">1024</span>, &amp;n2, <span class="literal">NULL</span>);<span class="comment">//ReadConsole</span></span><br><span class="line">		WriteFile(writeH, cmd, n2*<span class="number">2</span>, &amp;n, <span class="literal">NULL</span>);<span class="comment">//write pipe</span></span><br><span class="line">		<span class="keyword">if</span> (!printMsg(readH)) &#123;</span><br><span class="line">			TerminateProcess(pi.hProcess, <span class="number">0</span>);</span><br><span class="line">			system(<span class="string">"pause"</span>);</span><br><span class="line">			<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	system(<span class="string">"pause"</span>);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>dll</strong></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"stdafx.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;Windows.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;WinBase.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;detours.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">HANDLE(WINAPI* OLD_GetStdHandle)(DWORD nStdHandle) = GetStdHandle;</span><br><span class="line"></span><br><span class="line">BOOL(WINAPI * OLD_WriteConsoleW)(HANDLE  hConsoleOutput, <span class="keyword">const</span> VOID *lpBuffer, DWORD   nNumberOfCharsToWrite, LPDWORD lpNumberOfCharsWritten, LPVOID  lpReserved) = WriteConsoleW;</span><br><span class="line"></span><br><span class="line">BOOL(WINAPI * OLD_ReadConsoleInputW)(HANDLE hConsoleInput, PINPUT_RECORD lpBuffer, DWORD nLength, LPDWORD lpNumberOfEventsRead) = ReadConsoleInputW;</span><br><span class="line"></span><br><span class="line">BOOL(WINAPI * OLD_ReadConsoleInputA)(HANDLE hConsoleInput, PINPUT_RECORD lpBuffer, DWORD nLength, LPDWORD lpNumberOfEventsRead) = ReadConsoleInputA;</span><br><span class="line"></span><br><span class="line">BOOL(WINAPI * OLD_ReadConsoleW)(HANDLE  hConsoleInput, LPVOID  lpBuffer, DWORD   nNumberOfCharsToRead, LPDWORD lpNumberOfCharsRead, PCONSOLE_READCONSOLE_CONTROL  pInputControl) = ReadConsoleW;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> c = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function">HANDLE WINAPI <span class="title">NEW_GetStdHandle</span><span class="params">(DWORD nStdHandle)</span> </span>&#123;</span><br><span class="line">	HANDLE ret = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">if</span> (c &lt; <span class="number">2</span> ) &#123;</span><br><span class="line">		SECURITY_ATTRIBUTES sa;</span><br><span class="line">		sa.nLength = <span class="keyword">sizeof</span>(sa);</span><br><span class="line">		sa.lpSecurityDescriptor = <span class="literal">NULL</span>;</span><br><span class="line">		sa.bInheritHandle = TRUE;</span><br><span class="line">		<span class="keyword">if</span> (nStdHandle == STD_INPUT_HANDLE) &#123;</span><br><span class="line">			ret = CreateFileA(<span class="string">"CONIN$"</span>, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, &amp;sa, OPEN_EXISTING, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			ret = CreateFileA(<span class="string">"CONOUT$"</span>, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, &amp;sa, OPEN_EXISTING, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		c++;</span><br><span class="line">		<span class="keyword">return</span> ret;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> &#123;</span><br><span class="line">		ret = OLD_GetStdHandle(nStdHandle);</span><br><span class="line">		<span class="keyword">return</span> ret;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">BOOL WINAPI <span class="title">NEW_WriteConsoleW</span><span class="params">(HANDLE  hConsoleOutput, <span class="keyword">const</span> VOID *lpBuffer, DWORD   nNumberOfCharsToWrite, LPDWORD lpNumberOfCharsWritten, LPVOID  lpReserved)</span> </span>&#123;</span><br><span class="line">	HANDLE wPip = GetStdHandle(STD_OUTPUT_HANDLE);</span><br><span class="line">	WriteFile(wPip, lpBuffer, nNumberOfCharsToWrite*<span class="number">2</span>, lpNumberOfCharsWritten, <span class="literal">NULL</span>);</span><br><span class="line">	<span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">BOOL WINAPI <span class="title">NEW_ReadConsoleInputW</span><span class="params">(HANDLE hConsoleInput, PINPUT_RECORD lpBuffer, DWORD nLength, LPDWORD lpNumberOfEventsRead)</span> </span>&#123;</span><br><span class="line">	HANDLE rPip = GetStdHandle(STD_INPUT_HANDLE);</span><br><span class="line">	ReadFile(rPip, MultiBytes, nLength, lpNumberOfEventsRead, <span class="literal">NULL</span>);</span><br><span class="line">	*lpNumberOfCharsRead /= <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">BOOL WINAPI <span class="title">NEW_ReadConsoleInputA</span><span class="params">(HANDLE hConsoleInput, PINPUT_RECORD lpBuffer, DWORD nLength, LPDWORD lpNumberOfEventsRead)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">char</span> wideChar[<span class="number">1024</span>];</span><br><span class="line">	HANDLE rPip = GetStdHandle(STD_INPUT_HANDLE);</span><br><span class="line">	ReadFile(rPip, wideChar, nLength, lpNumberOfEventsRead, <span class="literal">NULL</span>);</span><br><span class="line">	DWORD dwNum = MultiByteToWideChar (CP_ACP, <span class="number">0</span>, wideChar, <span class="number">-1</span>, <span class="literal">NULL</span>, <span class="number">0</span>);</span><br><span class="line">	MultiByteToWideChar(CP_ACP, <span class="number">0</span>, wideChar, <span class="number">-1</span>, lpBuffer, dwNum);</span><br><span class="line">	*lpNumberOfCharsRead *= <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">BOOL WINAPI <span class="title">NEW_ReadConsoleW</span><span class="params">(HANDLE  hConsoleInput, LPVOID  lpBuffer, DWORD   nNumberOfCharsToRead, LPDWORD lpNumberOfCharsRead, PCONSOLE_READCONSOLE_CONTROL  pInputControl)</span> </span>&#123;</span><br><span class="line">	HANDLE rPip = GetStdHandle(STD_INPUT_HANDLE);</span><br><span class="line">	ReadFile(rPip, lpBuffer, nNumberOfCharsToRead, lpNumberOfCharsRead, <span class="literal">NULL</span>);</span><br><span class="line">	*lpNumberOfCharsRead /= <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Hook</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	DetourRestoreAfterWith();</span><br><span class="line">	DetourTransactionBegin();</span><br><span class="line">	DetourUpdateThread(GetCurrentThread());</span><br><span class="line">	DetourAttach((PVOID *)&amp;OLD_WriteConsoleW, NEW_WriteConsoleW);</span><br><span class="line">	DetourAttach((PVOID *)&amp;OLD_ReadConsoleInputW, NEW_ReadConsoleInputW);</span><br><span class="line">	DetourAttach((PVOID *)&amp;OLD_ReadConsoleInputA, NEW_ReadConsoleInputA);</span><br><span class="line">	DetourAttach((PVOID *)&amp;OLD_ReadConsoleW, NEW_ReadConsoleW);</span><br><span class="line">	DetourAttach((PVOID *)&amp;OLD_GetStdHandle, NEW_GetStdHandle);</span><br><span class="line">	DetourTransactionCommit();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">UnHook</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	DetourTransactionBegin();</span><br><span class="line">	DetourUpdateThread(GetCurrentThread());</span><br><span class="line">	DetourDetach((PVOID *)&amp;OLD_WriteConsoleW, NEW_WriteConsoleW);</span><br><span class="line">	DetourDetach((PVOID *)&amp;OLD_ReadConsoleInputW, NEW_ReadConsoleInputW);</span><br><span class="line">	DetourDetach((PVOID *)&amp;OLD_ReadConsoleInputA, NEW_ReadConsoleInputA);</span><br><span class="line">	DetourDetach((PVOID *)&amp;OLD_ReadConsoleW, NEW_ReadConsoleW);</span><br><span class="line">	DetourDetach((PVOID *)&amp;OLD_GetStdHandle, NEW_GetStdHandle);</span><br><span class="line">	DetourTransactionCommit();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function">BOOL APIENTRY <span class="title">DllMain</span><span class="params">( HMODULE hModule,</span></span></span><br><span class="line"><span class="function"><span class="params">                       DWORD  ul_reason_for_call,</span></span></span><br><span class="line"><span class="function"><span class="params">                       LPVOID lpReserved</span></span></span><br><span class="line"><span class="function"><span class="params">					 )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">switch</span> (ul_reason_for_call)</span><br><span class="line">	&#123;</span><br><span class="line">	<span class="keyword">case</span> DLL_PROCESS_ATTACH:</span><br><span class="line">		Hook();</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">case</span> DLL_THREAD_ATTACH:</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">case</span> DLL_THREAD_DETACH:</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	<span class="keyword">case</span> DLL_PROCESS_DETACH:</span><br><span class="line">		UnHook();</span><br><span class="line">		<span class="keyword">break</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/逆向/" rel="tag"># 逆向</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/02/管道/" rel="next" title="管道简介">
+                <i class="fa fa-chevron-left"></i> 管道简介
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/04/17/再看链接WIN/" rel="prev" title="再看链接(link)-WINDOWS">
+                再看链接(link)-WINDOWS <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">John Doe</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#问题分析"><span class="nav-number">1.</span> <span class="nav-text">问题分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案1"><span class="nav-number">2.</span> <span class="nav-text">解决方案1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案2"><span class="nav-number">3.</span> <span class="nav-text">解决方案2</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#贴代码咯"><span class="nav-number">3.1.</span> <span class="nav-text">贴代码咯</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
