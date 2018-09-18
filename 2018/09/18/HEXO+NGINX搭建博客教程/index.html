@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans" >
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo,Nginx," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="部署本地博客安装hexoWindows系统下安装hexo和其他需要的东西比较麻烦，推荐一个Windows Shell-babun。集成了cygwin和一系列插件，提供在windows上的linux操作体验。下面的操作默认在Winodws+babun的条件下进行。 只需要一条命令即可完成hexo的安装:123456789$ npm install -g hexo-cli//linux系统要先安装gi">
+<meta name="keywords" content="Hexo,Nginx">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo+Nginx+Rsync博客搭建">
+<meta property="og:url" content="http://yoursite.com/2018/09/18/HEXO+NGINX搭建博客教程/index.html">
+<meta property="og:site_name" content="Lee&#39;s blog">
+<meta property="og:description" content="部署本地博客安装hexoWindows系统下安装hexo和其他需要的东西比较麻烦，推荐一个Windows Shell-babun。集成了cygwin和一系列插件，提供在windows上的linux操作体验。下面的操作默认在Winodws+babun的条件下进行。 只需要一条命令即可完成hexo的安装:123456789$ npm install -g hexo-cli//linux系统要先安装gi">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-09-18T10:10:22.940Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hexo+Nginx+Rsync博客搭建">
+<meta name="twitter:description" content="部署本地博客安装hexoWindows系统下安装hexo和其他需要的东西比较麻烦，推荐一个Windows Shell-babun。集成了cygwin和一系列插件，提供在windows上的linux操作体验。下面的操作默认在Winodws+babun的条件下进行。 只需要一条命令即可完成hexo的安装:123456789$ npm install -g hexo-cli//linux系统要先安装gi">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/09/18/HEXO+NGINX搭建博客教程/"/>
+
+
+
+
+
+  <title>Hexo+Nginx+Rsync博客搭建 | Lee's blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans" style="background-image: url(/images/bg1.jpeg); background-attachment: fixed ">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Lee's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/18/HEXO+NGINX搭建博客教程/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Lee">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Lee's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Hexo+Nginx+Rsync博客搭建</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-09-18T00:00:00+09:00">
+                2018-09-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/教程/" itemprop="url" rel="index">
+                    <span itemprop="name">教程</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="部署本地博客"><a href="#部署本地博客" class="headerlink" title="部署本地博客"></a>部署本地博客</h1><h2 id="安装hexo"><a href="#安装hexo" class="headerlink" title="安装hexo"></a>安装hexo</h2><p>Windows系统下安装hexo和其他需要的东西比较麻烦，推荐一个Windows Shell-<a href="http://babun.github.io/" target="_blank" rel="noopener">babun</a>。集成了cygwin和一系列插件，提供在windows上的linux操作体验。<code>下面的操作默认在Winodws+babun的条件下进行。</code></p>
+<p><strong>只需要一条命令即可完成hexo的安装:</strong><br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ npm install -g hexo-cli</span><br><span class="line"></span><br><span class="line"><span class="comment">//linux系统要先安装git和node，执行命令：</span></span><br><span class="line">sudo apt-get install git-core</span><br><span class="line"></span><br><span class="line">$ curl https:<span class="comment">//raw.github.com/creationix/nvm/master/install.sh | sh</span></span><br><span class="line">$ wget -qO- https:<span class="comment">//raw.github.com/creationix/nvm/master/install.sh | sh</span></span><br><span class="line">$ nvm install stable</span><br><span class="line"><span class="comment">//注意node版本过低会导致hexo命令执行时报错找不到hexo</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="建站"><a href="#建站" class="headerlink" title="建站"></a>建站</h2><p><strong>执行如下命令后会在folder中生成网站所需所有文件</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ hexo init &lt;folder&gt;</span><br><span class="line">$ cd &lt;folder&gt;</span><br><span class="line">$ npm install</span><br></pre></td></tr></table></figure>
+<p><code>假定folder为blog</code></p>
+<p><strong>可以执行如下命令然后进入<a href="http://localhost:4000" target="_blank" rel="noopener">你的网站</a>查看是否建站成功</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<h2 id="更换主题"><a href="#更换主题" class="headerlink" title="更换主题"></a>更换主题</h2><p>以<a href="http://theme-next.iissnan.com" target="_blank" rel="noopener">next</a>主题为例</p>
+<p>进入网站目录下执行命令，克隆主题文件到本地<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git clone https://github.com/iissnan/hexo-theme-next themes/next</span><br></pre></td></tr></table></figure></p>
+<p>编辑站点配置文件<code>_config.yml</code>修改theme的值为next启用next主题</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">theme: next</span><br></pre></td></tr></table></figure>
+<p>现在你可以重启hexo并访问<a href="http://localhost:4000" target="_blank" rel="noopener">你的网站</a>验证主题</p>
+<h1 id="通过rsync部署博客到服务器"><a href="#通过rsync部署博客到服务器" class="headerlink" title="通过rsync部署博客到服务器"></a>通过rsync部署博客到服务器</h1><h2 id="在服务器和本地安装rsync"><a href="#在服务器和本地安装rsync" class="headerlink" title="在服务器和本地安装rsync"></a>在服务器和本地安装rsync</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install rsync -y</span><br></pre></td></tr></table></figure>
+<p><code>babun自带rsync不用安装</code><br><code>windows下还有cwRsync但是我在使用时遇到了许多问题</code></p>
+<h2 id="设置ssh-key"><a href="#设置ssh-key" class="headerlink" title="设置ssh-key"></a>设置ssh-key</h2><p>rsync通过ssh与服务器进行连接，需要将本机的公钥添加到服务器的授权文件中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ ssh-keygen -t rsa</span><br><span class="line">//记住重命名生成的id_rsa文件例如id_server_rsa，不然与git默认使用的id_rsa冲突</span><br><span class="line"></span><br><span class="line">//将公钥添加到服务器授权文件中</span><br><span class="line">$ ssh-copy-id -i ~/.ssh/你的命名.pub user@server</span><br><span class="line"></span><br><span class="line">//windows用户需要设置.pub文件权限</span><br><span class="line">$ chmod 600 ~/.ssh/你的命名.pub</span><br></pre></td></tr></table></figure>
+<p><code>现在使用ssh连接服务器不需要密码</code></p>
+<p>这里因为id_server_rsa不是默认的私钥文件，需要配置ssh才能使用到正确的私钥访问服务器，首先在<code>~/.ssh</code>目录下新建config文件，编辑设置</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Host tencentServer<span class="comment">//别名： 使用$ ssh 别名 连接服务器</span></span><br><span class="line">    Hostname ***.***.*** <span class="comment">//主机名 ip地址或域名</span></span><br><span class="line">    User 用户名</span><br><span class="line">    IdentityFile ~/.ssh/你的私钥命名    <span class="comment">// ~/.ssh不能省略，因为这个路径是相对命令执行的路径</span></span><br><span class="line">    <span class="comment">//Port 默认就好</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*第二个映射</span></span><br><span class="line"><span class="comment">Host </span></span><br><span class="line"><span class="comment">    Hostname</span></span><br><span class="line"><span class="comment">    User </span></span><br><span class="line"><span class="comment">    IdentityFile</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+<p><code>git默认使用id_rsa</code></p>
+<p>可以使用<code>ssh 别名</code>连接进行测试</p>
+<p><code>windows可能有很多个ssh应用程序，使用的.ssh目录不一定完全一致，注意区分，否则会授权失败</code></p>
+<h2 id="本地设置"><a href="#本地设置" class="headerlink" title="本地设置"></a>本地设置</h2><p>打开站点设置文件<code>_config.yml</code>添加如下设置<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//切记用空格进行缩进</span></span><br><span class="line">deploy:</span><br><span class="line">- type: rsync</span><br><span class="line">  host: ***.***.*** <span class="comment">//ssh config里设置的host</span></span><br><span class="line">  user: root <span class="comment">//你登录服务器用的用户名</span></span><br><span class="line">  root: /blog <span class="comment">//上传到服务器的目录</span></span><br><span class="line">- type: git</span><br><span class="line">  repo: &lt;repo url&gt;</span><br><span class="line">  branch: &lt;your branch&gt;</span><br></pre></td></tr></table></figure></p>
+<h2 id="部署文件"><a href="#部署文件" class="headerlink" title="部署文件"></a>部署文件</h2><p>到博客目录执行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate //生成静态网页文件</span><br><span class="line">$ hexo clean    //如果主题更换需要执行此命令</span><br><span class="line">$ hexo deploy   //部署</span><br></pre></td></tr></table></figure>
+<h1 id="使用nginx反向代理"><a href="#使用nginx反向代理" class="headerlink" title="使用nginx反向代理"></a>使用nginx反向代理</h1><p>好处是：访问网站不用加端口号</p>
+<h2 id="安装nginx"><a href="#安装nginx" class="headerlink" title="安装nginx"></a>安装nginx</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ cd 安装目录</span><br><span class="line">$ wget http:<span class="comment">//nginx.org/download/nginx-1.13.7.tar.gz</span></span><br><span class="line">$ tar -xvf nginx<span class="number">-1.13</span><span class="number">.7</span>.tar.gz</span><br><span class="line">$ cd nginx<span class="number">-1.13</span><span class="number">.7</span></span><br><span class="line">$ ./config</span><br><span class="line">$ make</span><br><span class="line">$ make install</span><br></pre></td></tr></table></figure>
+<h2 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h2><p>修改配置文件`nginx/conf/nginx.conf</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">location / &#123;</span><br><span class="line">    root   rsync文件传输目录;</span><br><span class="line">    index  index.html index.htm;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重启nginx即可</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ kill -ef | grep &apos;nginx&apos;</span><br><span class="line">$ nginx/sbin/nginx</span><br></pre></td></tr></table></figure>
+<p>现在可以在浏览器输入你的ip访问你的网站了。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Hexo/" rel="tag"># Hexo</a>
+          
+            <a href="/tags/Nginx/" rel="tag"># Nginx</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/08/x86汇编语言笔记/" rel="next" title="<从实模式到保护模式>笔记">
+                <i class="fa fa-chevron-left"></i> <从实模式到保护模式>笔记
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Lee</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/RLee063" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://douban.com/people/rlee063" target="_blank" title="豆瓣">
+                      
+                        <i class="fa fa-fw fa-grav"></i>豆瓣</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#部署本地博客"><span class="nav-number">1.</span> <span class="nav-text">部署本地博客</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#安装hexo"><span class="nav-number">1.1.</span> <span class="nav-text">安装hexo</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建站"><span class="nav-number">1.2.</span> <span class="nav-text">建站</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#更换主题"><span class="nav-number">1.3.</span> <span class="nav-text">更换主题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#通过rsync部署博客到服务器"><span class="nav-number">2.</span> <span class="nav-text">通过rsync部署博客到服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#在服务器和本地安装rsync"><span class="nav-number">2.1.</span> <span class="nav-text">在服务器和本地安装rsync</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#设置ssh-key"><span class="nav-number">2.2.</span> <span class="nav-text">设置ssh-key</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#本地设置"><span class="nav-number">2.3.</span> <span class="nav-text">本地设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部署文件"><span class="nav-number">2.4.</span> <span class="nav-text">部署文件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用nginx反向代理"><span class="nav-number">3.</span> <span class="nav-text">使用nginx反向代理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#安装nginx"><span class="nav-number">3.1.</span> <span class="nav-text">安装nginx</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#修改配置文件"><span class="nav-number">3.2.</span> <span class="nav-text">修改配置文件</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Lee</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
