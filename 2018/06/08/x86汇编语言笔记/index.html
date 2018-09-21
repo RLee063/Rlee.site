@@ -95,6 +95,14 @@
 <meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/11_3.png">
 <meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/11_5.png">
 <meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/11_4.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/08/images/从实模式到保护模式/14_1.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_2.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_3.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_4.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_5.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_6.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_7.png">
+<meta property="og:image" content="http://yoursite.com/images/从实模式到保护模式/14_8.png">
 <meta property="og:updated_time" content="2018-06-11T03:00:00.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="&lt;从实模式到保护模式&gt;笔记">
@@ -404,6 +412,7 @@
 <p><img src="/images/从实模式到保护模式/11_4.png" alt=""></p>
 <p>TI=0时表示段描述符在GDT中，TI=1的时候表示在LDT中。RPL 是请求特权级，请求访问这个段的程序的特权级别。</p>
 <p>事实上不是每次访问都会去表中查找，每个段寄存器有他自己的描述符高速缓存器，只有当改变了段选择子的时候才回去表中查找段描述符并且加载到高速缓存器中。以后每次都直接从高速缓存器中取得段描述符。</p>
+<p>但实模式并没有GDT表和LDT表哦，所以实模式下改变段寄存器是将段基址左移四位然后送到高速缓次都直接从高速缓存器中取得段描述符。</p>
 <p>但实模式并没有GDT表和LDT表哦，所以实模式下改变段寄存器是将段基址左移四位然后送到高速缓存器低20位中。</p>
 <h3 id="清空流水线并串行化处理器"><a href="#清空流水线并串行化处理器" class="headerlink" title="清空流水线并串行化处理器"></a>清空流水线并串行化处理器</h3><p><code>jmp的时候已经在流水线中执行了一部分的代码怎么处理?</code></p>
 <p><code>汇编指令不具有原子性了?</code></p>
@@ -513,6 +522,127 @@ xlat; 查表指令，用al寄存器内容作为ds:ebx(bx)表中偏移返回一�
 <li>熟悉调用门的用法。</li>
 <li>学习一些新指令：lldt、ltr、pushf/pushfd、popf/popfd、ret n/retf n、arpl等，同时了解jmp和call这样传统指令如何被赋予一些新功能。</li>
 </ol>
+<h2 id="任务的隔离与特权级保护"><a href="#任务的隔离与特权级保护" class="headerlink" title="任务的隔离与特权级保护"></a>任务的隔离与特权级保护</h2><h3 id="LDT"><a href="#LDT" class="headerlink" title="LDT"></a>LDT</h3><p>既然涉及到任务，那么每个任务固然像内核一样拥有自己的代码段，数据段和桟段，所以有LDT(Local Descriptor Table)。LDT和GDT结构一致，不同之处在于，LDT只属于单个任务。<code>LDT的0号槽位有效，因为访问LDT的选择子TI位为1</code></p>
+<p>为了追踪LDT处理器使用了LDTR寄存器存储当前任务LDT信息。</p>
+<h3 id="TSS"><a href="#TSS" class="headerlink" title="TSS"></a>TSS</h3><p>在做任务切换时候，需要保存当前任务的寄存器状态等重要信息，这个区域叫做TSS(任务状态段)，32-Bit格式如下</p>
+<p><img src="../images/从实模式到保护模式/14_1.png" alt=""></p>
+<p>和LDT、GDT一样，处理器通过TR寄存器跟踪TSS。<code>注意不是TSSR</code></p>
+<h3 id="特权级DPC、CPL和RPL"><a href="#特权级DPC、CPL和RPL" class="headerlink" title="特权级DPC、CPL和RPL"></a>特权级DPC、CPL和RPL</h3><p>CPL：当前特权等级，通常被存储在当前执行程序的cs上低2位。</p>
+<p><code>有CPL并不等于代码所在段的特权级的情况，例如一致代码段</code></p>
+<p>DPL：表示门或者段的特权等级，用来限制跨特权级访问，在段描述符中。</p>
+<ul>
+<li>对于数据段，TSS和调用门，DPL规定了访问的最低特权级。</li>
+<li>对于非一致代码段，DPL规定了访问该段的指定特权级。</li>
+<li>对于一致代码段，DPL规定了访问该段的最高特权级。</li>
+</ul>
+<p>RPL：请求特权级，在段选择子的低两位上，与DPL一起作为访问限制。</p>
+<ul>
+<li>RPL的引入主要是为了防止用户特权级程序通过传给操作系统自己无法访问的段选择子达到访问自己不能访问的数据的目的。</li>
+<li>CPU在权限比较时会比较CPL和RPL是否同时满足。</li>
+<li>操作系统在从应用程序接受选择子时会检测选择子RPL是否和CPL相同，不同则将RPL置为CPL。</li>
+</ul>
+<h2 id="内核程序的初始化"><a href="#内核程序的初始化" class="headerlink" title="内核程序的初始化"></a>内核程序的初始化</h2><h3 id="安装调用门"><a href="#安装调用门" class="headerlink" title="安装调用门"></a>安装调用门</h3><p>由于用户程序工作在较低的特权级别<code>通常为3级</code>，要想像之前那样调用操作系统提供的例程的话显然CPU是不会允许的，这个时候需要安装调用门，本质上是一个描述符，结构如下：</p>
+<p><img src="/images/从实模式到保护模式/14_2.png" alt=""></p>
+<ul>
+<li>TYPE：用于标明门的类型，事实上门都是这个结构，1100表示调用门</li>
+<li>P：有效位，通常是1，为0时调用会产生异常中断属于故障中断，中断返回后还会执行引起中断的命令</li>
+</ul>
+<p>通过调用门实现控制转移需要使用长跳转命令<code>jmp far &amp; call far</code>，注意<code>call far</code>会改变CPL而前者不会。</p>
+<p>指令中的偏移量不会被使用，使用段基址（调用门描述符中的段选择子选择的段描述符中的段基址）+偏移（调用门描述符里的偏移）作为访问的地址。</p>
+<p>调用门的DPL决定了能够使用它的最小权限级别，目的代码段的DPL决定了能够访问它的最大权限级别。</p>
+<pre><code>目标代码段描述符的DPL ≤ max(CPL, RPL) ≤ 调用门描述符的DPL
+</code></pre><p>使用例程段描述符和每个例程段内偏移构造调用门，并添加到GDT中去并将选择子写入C-SALT表中供程序重定位之后使用。</p>
+<h2 id="加载用户程序并创建任务"><a href="#加载用户程序并创建任务" class="headerlink" title="加载用户程序并创建任务"></a>加载用户程序并创建任务</h2><h3 id="任务控制块和TCB链"><a href="#任务控制块和TCB链" class="headerlink" title="任务控制块和TCB链"></a>任务控制块和TCB链</h3><p>有时候操作系统想要跟踪到所有的任务，想实现更多的进程管理光依靠CPU提供的TSS是远远不够的，于是自定义了任务控制块（Task Control Block）数据结构，用来存储与任务相关的更多信息。为了跟踪到所有的任务，可以将每个任务的TCB用链表串起来。</p>
+<p>在每次创建一个任务的时候，就创建任务的TCB并将其挂到TCB链上，在内核里维护一个tcb_chain指针用于指向第一个TCB。</p>
+<h3 id="32位桟操作"><a href="#32位桟操作" class="headerlink" title="*32位桟操作"></a>*32位桟操作</h3><p>略</p>
+<p>32位下桟操作32位，会将16位段寄存器零扩展为32位</p>
+<h3 id="加载用户程序"><a href="#加载用户程序" class="headerlink" title="加载用户程序"></a>加载用户程序</h3><ul>
+<li>为LDT分配内存</li>
+<li>将LDT在TCB中登记</li>
+<li>分配内存加载用户程序，将其信息填入TCB中</li>
+</ul>
+<h3 id="创建局部描述符表"><a href="#创建局部描述符表" class="headerlink" title="创建局部描述符表"></a>创建局部描述符表</h3><p><code>注意最开始LDT界限为长度0-1=0XFFFF，在增加表项后修改界限的时候切记使用16位寄存器，否则进位影响到其他位。</code></p>
+<p>从TCB中获取程序信息，为程序的所有段创建描述符，并安装在LDT中。注意段描述符的DPL等级为3，段选择子的TI位为1，表示在LDT中查找，并且RPL都是3。</p>
+<h3 id="重定位U-SALT表"><a href="#重定位U-SALT表" class="headerlink" title="重定位U-SALT表"></a>重定位U-SALT表</h3><p>需要将C-SALT中的段选择子复制到用户程序中，需要将RPL从0修改为3<code>供操作系统使用更改为供用户程序使用</code></p>
+<h3 id="创建0、1和2特权级的桟"><a href="#创建0、1和2特权级的桟" class="headerlink" title="创建0、1和2特权级的桟"></a>创建0、1和2特权级的桟</h3><p>用户程序从3特权级的代码切换到内核例程1特权级的代码时，如果用的是<code>call far</code>，当前CPL会发生变化，需要切换特权级不同的桟，就需要为程序准备不同特权级的段。</p>
+<p>桟需要登记在TSS和TCB中，注意初始地址是高端地址，因为桟是逆生长的。</p>
+<p>登记在TCB中的桟选择子RPL应当设置为0。</p>
+<h3 id="安装LDT描述符到GDT中"><a href="#安装LDT描述符到GDT中" class="headerlink" title="安装LDT描述符到GDT中"></a>安装LDT描述符到GDT中</h3><p>需要在GDT中创建LDT的描述符。<code>为啥</code></p>
+<p><img src="/images/从实模式到保护模式/14_3.png" alt=""></p>
+<p><strong>S=0,TYPE=0010</strong>表明这是一个LDT描述符。</p>
+<h3 id="任务状态段TSS创建与安装"><a href="#任务状态段TSS创建与安装" class="headerlink" title="任务状态段TSS创建与安装"></a>任务状态段TSS创建与安装</h3><p>依次填写TSS各个位置。</p>
+<p>顶上有一个区域叫做：<code>I/O映射基地址</code>，<strong>关于操作系统I/O接口授权在另一本书中探索。</strong></p>
+<p>安装TSS描述符到GDT中，通过<code>call far &amp; jmp far</code>指令操作TSS描述符选择子的时候，处理器就会执行任务切换操作。</p>
+<p>TSS的描述符TYPE=0x10B1，其他和LDT一样。</p>
+<h2 id="用户程序的执行"><a href="#用户程序的执行" class="headerlink" title="用户程序的执行"></a>用户程序的执行</h2><h3 id="通过调用门实现控制转移"><a href="#通过调用门实现控制转移" class="headerlink" title="通过调用门实现控制转移"></a>通过调用门实现控制转移</h3><p>在通过<code>call far</code>指令通过调用门转移控制时操作流程是：</p>
+<ol>
+<li>使用新CPL选择新桟的桟选择子和栈指针</li>
+<li>使用桟选择子读取桟描述符</li>
+<li>检查桟描述符的特权级和类型</li>
+<li>临时保存当前桟段SS和ESP</li>
+<li>载入新的SS和ESP</li>
+<li>将临时保存的SS和ESP压入新桟</li>
+<li>根据调用门描述符中的“参数个数”从旧桟中复制参数到新桟中</li>
+<li>将当前CS和EIP压入新桟</li>
+<li>载入新CS和EIP</li>
+</ol>
+<p>在通过retf返回时的操作流程是：</p>
+<ol>
+<li>检查桟中的CS，根据RPL决定返回是否变更特权级</li>
+<li>从当前桟取出CS和EIP，并对RPL特权级检查</li>
+<li>如果retf带参数，则跳过相应参数（被调用者的桟）</li>
+<li>如果要改变特权级，则需要读取桟中的SS和ESP切换到调用者的桟</li>
+<li>如果retf带参数，则跳过相应参数（调用者的桟）</li>
+<li>如果返回要改变特权级，检查DS、ES、FS和GS寄存器的内容，找到对应的描述符，弱有DPL&gt;调用者CPL的情况，则传输0给相应的段寄存器</li>
+</ol>
+<h3 id="进入特权级3的用户程序执行"><a href="#进入特权级3的用户程序执行" class="headerlink" title="进入特权级3的用户程序执行"></a>进入特权级3的用户程序执行</h3><p>事实上CPU并不允许直接从0特权级的全局空间控制转移到3特权级的空间，可以通过假装从调用门返回的方式。</p>
+<p>使TR、LDTR指向用户任务，将用户任务的CS和EIP压入桟中，执行一个远返回指令。</p>
+<h1 id="第十五章-任务切换"><a href="#第十五章-任务切换" class="headerlink" title="第十五章 任务切换"></a>第十五章 任务切换</h1><h2 id="任务切换前的设置"><a href="#任务切换前的设置" class="headerlink" title="任务切换前的设置"></a>任务切换前的设置</h2><p>前一章中，没有涉及到任务切换，直接从3特权级的任务开始执行，这是不必要的。事实上内核刚开始加载的时候，就应该会创建一些0特权级属于内核的任务，例如：任务管理器。</p>
+<p>于是在切换任务之前，可以将当前内核作为第一个任务。内核的段描述符都存在于GDT中，不需要LDT，事实上LDT本就不是必须的。设置内核任务的TSS，并在GDT中安装TSS的描述符。然后将TSS选择子传送到TR中，处理器便能够识别到当前任务，会自动将对应TSS描述符B位置1。</p>
+<h2 id="任务切换的方法"><a href="#任务切换的方法" class="headerlink" title="任务切换的方法"></a>任务切换的方法</h2><p>可以利用中断，在保护模式下不再用中断向量表，而是用中断描述符表IDT，类似于GDT和LDT。中断描述符表中可以是中断门，陷阱们和任务门。如果中断号对应的是任务门的话，就会进行任务切换，保存当前任务的现场，转到另一个任务去执行。</p>
+<p><img src="/images/从实模式到保护模式/14_4.png" alt=""></p>
+<p>中断处理过程和任务切换都需要用<code>iret</code>来返回，通过<code>EFLAGS</code>的NT位来表明当前任务是否嵌套于其他任务（是否由其他任务切换而来），来决定<code>iret</code>时是否要切换任务。嵌套的任务TSS中B位都为1。<br><code>任务切换就必须是嵌套的？</code></p>
+<p>除了使用任务门，还可以通过call, jmp的方式进行任务切换，将操作数置为TSS选择子即可。</p>
+<p>使用call发起的任务切换类似于中断发起的任务切换，是嵌套的。而jmp不会，并把旧任务TSS中B位清零。</p>
+<p>任务是不可重进入的，TSS中B位不为0时，不能执行任务切换。</p>
+<h2 id="call-jmp-iret指令发起的任务切换"><a href="#call-jmp-iret指令发起的任务切换" class="headerlink" title="call/jmp/iret指令发起的任务切换"></a>call/jmp/iret指令发起的任务切换</h2><p><img src="/images/从实模式到保护模式/14_5.png" alt=""></p>
+<h1 id="分页机制和动态页面分配"><a href="#分页机制和动态页面分配" class="headerlink" title="分页机制和动态页面分配"></a>分页机制和动态页面分配</h1><h2 id="分页机制概述"><a href="#分页机制概述" class="headerlink" title="分页机制概述"></a>分页机制概述</h2><p>在页式内存管理系统中，页面的管理和分配是独立的，和分段以及段地址没有关系。操作系统所要做的，就是寻找空闲页面，把它分配给需要的段，并将页的物理地址填写到映射表内。</p>
+<h2 id="页目录、页表和页"><a href="#页目录、页表和页" class="headerlink" title="页目录、页表和页"></a>页目录、页表和页</h2><p>4GB虚拟地址要想转换为物理地址，就必须要一个表来记录逻辑地址与物理地址的映射。假设有4GB逻辑内存，每一页4KB，就有1024*1024项，假设每一项4字节就需要4M的内存空间，每一个程序一来就用4M的内存空间在以前是不能被接受的，因为某种原因<code>共享的全局空间</code>，并不能对这个表进行动态扩充，为了解决这个问题，页目录出现了。</p>
+<p>定义每一个页表有1024项分别映射到一个具体的物理页，页目录每一项分别对应一个页表，于是页目录只有1024项，由于之前的特殊原因只会要求第一级的映射表要健全，于是现在每个程序只需要首先建立4K的页目录就可以了，大大节约了宝贵的内存<code>虽然对于现在的内存来说是本末倒置</code>。</p>
+<p><img src="/images/从实模式到保护模式/14_6.png" alt=""></p>
+<p>有一个控制寄存器CR3，存放着当前任务页目录的物理地址。在TSS中有存放CR3信息的相关槽位。</p>
+<p>页表和页目录也同样是普通的页，在程序执行完毕后应该被回收。</p>
+<h2 id="地址变换的具体过程"><a href="#地址变换的具体过程" class="headerlink" title="地址变换的具体过程"></a>地址变换的具体过程</h2><p>先通过段选择子和偏移得到32位的逻辑地址</p>
+<p>高10位作为页目录偏移定位页表，中10位作为页表偏移定位页，低12位作为页内偏移确定物理地址。</p>
+<h2 id="在分页机制下工作"><a href="#在分页机制下工作" class="headerlink" title="在分页机制下工作"></a>在分页机制下工作</h2><p>因为所有页都是4KB对齐，页表也是页所以定位页表的基地址和定位页的基地址一样只需要20位，每一个页表项或页目录项占4字节32位，剩下的位用来记录额外信息：</p>
+<p><img src="/images/从实模式到保护模式/14_7.png" alt=""></p>
+<p><img src="/images/从实模式到保护模式/14_8.png" alt=""></p>
+<ul>
+<li>P：存在位，页表不存在则需要创建页表，页不存在则需要从磁盘调入</li>
+<li>RW：读写位，0只读，1可读写</li>
+<li>US：用户/管理位，为1时允许所有特权级访问，为0时只允许0，1，2的程序访问</li>
+<li>PWT：页级通写位，和高速缓存有关</li>
+<li>PCD：页级高速缓存禁止位</li>
+<li>A：访问位，是否被访问过</li>
+<li>D：脏位，指向的页表是否写入过数据</li>
+<li>PAT：页属性表支持位</li>
+<li>G：全局位，用来指示该表项所指向的页是否为全局性质，如果是，则会在高速缓存中一直保存</li>
+<li>AVL：软件使用位</li>
+</ul>
+<p>在创建页目录表时，将页目录表的物理地址等级在它自己的最后一个目录项里，为了方便用线性地址访问页目录表自己<code>会浪费实际内存高端4MB内存</code>。</p>
+<p>我们的内核占用内存低端1MB，换算过来就是一个页目录项和256个页表项。为页目录项和第一个页表分配地址并填写内容。</p>
+<p>内容填写好之后将需要页目录基地址填入CR3寄存，CR3高20位填写基地址，低12位除了PCD,PWT之外都没有使用。</p>
+<p>CR0的最高位PG位用来开启或关闭页功能。</p>
+<h2 id="任务全局空间和局部空间的页面映射"><a href="#任务全局空间和局部空间的页面映射" class="headerlink" title="任务全局空间和局部空间的页面映射"></a>任务全局空间和局部空间的页面映射</h2><p>由于每一个程序拥有自己独立的4GB地址空间，于是按照之前的方式调用操作系统例程就会出现问题。</p>
+<p>为了公平起见，将4GB地址分为高2GB和低2GB，低2GB是程序的私有空间，高2GB是全局空间。</p>
+<p>把页目录表的上半部分用下半部分的值复制覆盖，仅仅修改页目录表是不够的，还需要修改例程段描述符，和移动GDT的位置。</p>
+<h2 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h2><p>虚拟内存分配和先前一样，用一个指针记录可以分配内存的地址。（说过分页对以前的机制没有本质改变）只是需要在页目录和页表中添加对应的项目，和分配具体的物理页，并将回填到页目录和页表的对应位置。</p>
+<p>页面位串查找的核心思想就是将物理内存的使用情况用位串表示，通过查找位串来查询页面的分配情况。</p>
+<h2 id="分页or分段"><a href="#分页or分段" class="headerlink" title="分页or分段"></a>分页or分段</h2><p>分段机制可以扩大CPU访问内存的能力<code>但是在现在已经不再适用</code>。</p>
+<p>分段机制还可以方便的实现程序段的浮动和重定位<code>其他方法可以实现</code>。</p>
+<p>分段机制可以防止一个程序访问不属于他的段<code>段界限</code>，但在分页模式下不在某个程序的页目录下注册页面这个程序就永远也不可能访问到那个页。</p>
+<h2 id="平坦模型"><a href="#平坦模型" class="headerlink" title="平坦模型"></a>平坦模型</h2><p>所有的段描述符使用的段基址为0，段界限都是0xFFFFFFFF。因为只用使用偏移量就可以达到4GB的寻址能力，这样编程序会方便很多，不用去拘泥于段的划分。</p>
+<p>随之带来的程序浮动与重定位问题，需要操作程序提供支持<code>链接器与加载器</code>。</p>
 
       
     </div>
@@ -654,7 +784,7 @@ xlat; 查表指令，用al寄存器内容作为ds:ebx(bx)表中偏移返回一�
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-count">9</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -703,7 +833,7 @@ xlat; 查表指令，用al寄存器内容作为ds:ebx(bx)表中偏移返回一�
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#第十章-32位x86处理器编程架构"><span class="nav-number">1.</span> <span class="nav-text">第十章 32位x86处理器编程架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-IA-32架构的基本执行环境"><span class="nav-number">1.1.</span> <span class="nav-text">10.1 IA-32架构的基本执行环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-线代处理器的结构和特点"><span class="nav-number">1.2.</span> <span class="nav-text">10.2 线代处理器的结构和特点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-1-流水线"><span class="nav-number">1.2.1.</span> <span class="nav-text">10.2.1 流水线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-2-cache高速缓存"><span class="nav-number">1.2.2.</span> <span class="nav-text">10.2.2 cache高速缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-3-乱序执行"><span class="nav-number">1.2.3.</span> <span class="nav-text">10.2.3 乱序执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-4-寄存器重命名"><span class="nav-number">1.2.4.</span> <span class="nav-text">10.2.4 寄存器重命名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-5-分支目标预测"><span class="nav-number">1.2.5.</span> <span class="nav-text">10.2.5 分支目标预测</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-3-32位模式的指令系统"><span class="nav-number">1.3.</span> <span class="nav-text">10.3 32位模式的指令系统</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十一章-进入保护模式"><span class="nav-number">2.</span> <span class="nav-text">第十一章 进入保护模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#全局描述符表GDT"><span class="nav-number">2.1.</span> <span class="nav-text">全局描述符表GDT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储器的段描述符"><span class="nav-number">2.2.</span> <span class="nav-text">存储器的段描述符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装存储器的段描述符并加载GDTR"><span class="nav-number">2.3.</span> <span class="nav-text">安装存储器的段描述符并加载GDTR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#A20地址线"><span class="nav-number">2.4.</span> <span class="nav-text">A20地址线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保护模式下的内存访问"><span class="nav-number">2.5.</span> <span class="nav-text">保护模式下的内存访问</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#清空流水线并串行化处理器"><span class="nav-number">2.5.1.</span> <span class="nav-text">清空流水线并串行化处理器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十二章-存储器的保护"><span class="nav-number">3.</span> <span class="nav-text">第十二章 存储器的保护</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#mov-ds-ax-和-mov-ds-eax"><span class="nav-number">3.1.</span> <span class="nav-text">mov ds, ax 和 mov ds, eax</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储器保护"><span class="nav-number">3.2.</span> <span class="nav-text">存储器保护</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#地址变换时的保护"><span class="nav-number">3.3.</span> <span class="nav-text">地址变换时的保护</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#代码段执行的保护"><span class="nav-number">3.3.1.</span> <span class="nav-text">代码段执行的保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#桟操作时的保护"><span class="nav-number">3.3.2.</span> <span class="nav-text">桟操作时的保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据访问时的保护"><span class="nav-number">3.3.3.</span> <span class="nav-text">数据访问时的保护</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用别名"><span class="nav-number">3.4.</span> <span class="nav-text">使用别名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#指令们"><span class="nav-number">3.5.</span> <span class="nav-text">指令们</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十三章-程序的动态加载和执行"><span class="nav-number">4.</span> <span class="nav-text">第十三章 程序的动态加载和执行</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#代码清单"><span class="nav-number">4.1.</span> <span class="nav-text">代码清单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内核的结构、功能和加载"><span class="nav-number">4.2.</span> <span class="nav-text">内核的结构、功能和加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#内核的结构"><span class="nav-number">4.2.1.</span> <span class="nav-text">内核的结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内核的加载"><span class="nav-number">4.2.2.</span> <span class="nav-text">内核的加载</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在内核中执行"><span class="nav-number">4.3.</span> <span class="nav-text">在内核中执行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#用户程序加载"><span class="nav-number">4.4.</span> <span class="nav-text">用户程序加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#用户程序的结构"><span class="nav-number">4.4.1.</span> <span class="nav-text">用户程序的结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算扇区数"><span class="nav-number">4.4.2.</span> <span class="nav-text">计算扇区数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#动态内存分配"><span class="nav-number">4.4.3.</span> <span class="nav-text">动态内存分配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#段的重定位和描述符的创建"><span class="nav-number">4.4.4.</span> <span class="nav-text">段的重定位和描述符的创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重定位用户程序内的符号地址"><span class="nav-number">4.4.5.</span> <span class="nav-text">重定位用户程序内的符号地址</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十四章-任务和特权级保护"><span class="nav-number">5.</span> <span class="nav-text">第十四章 任务和特权级保护</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#第十章-32位x86处理器编程架构"><span class="nav-number">1.</span> <span class="nav-text">第十章 32位x86处理器编程架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-IA-32架构的基本执行环境"><span class="nav-number">1.1.</span> <span class="nav-text">10.1 IA-32架构的基本执行环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-线代处理器的结构和特点"><span class="nav-number">1.2.</span> <span class="nav-text">10.2 线代处理器的结构和特点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-1-流水线"><span class="nav-number">1.2.1.</span> <span class="nav-text">10.2.1 流水线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-2-cache高速缓存"><span class="nav-number">1.2.2.</span> <span class="nav-text">10.2.2 cache高速缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-3-乱序执行"><span class="nav-number">1.2.3.</span> <span class="nav-text">10.2.3 乱序执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-4-寄存器重命名"><span class="nav-number">1.2.4.</span> <span class="nav-text">10.2.4 寄存器重命名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-2-5-分支目标预测"><span class="nav-number">1.2.5.</span> <span class="nav-text">10.2.5 分支目标预测</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-3-32位模式的指令系统"><span class="nav-number">1.3.</span> <span class="nav-text">10.3 32位模式的指令系统</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十一章-进入保护模式"><span class="nav-number">2.</span> <span class="nav-text">第十一章 进入保护模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#全局描述符表GDT"><span class="nav-number">2.1.</span> <span class="nav-text">全局描述符表GDT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储器的段描述符"><span class="nav-number">2.2.</span> <span class="nav-text">存储器的段描述符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装存储器的段描述符并加载GDTR"><span class="nav-number">2.3.</span> <span class="nav-text">安装存储器的段描述符并加载GDTR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#A20地址线"><span class="nav-number">2.4.</span> <span class="nav-text">A20地址线</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#保护模式下的内存访问"><span class="nav-number">2.5.</span> <span class="nav-text">保护模式下的内存访问</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#清空流水线并串行化处理器"><span class="nav-number">2.5.1.</span> <span class="nav-text">清空流水线并串行化处理器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十二章-存储器的保护"><span class="nav-number">3.</span> <span class="nav-text">第十二章 存储器的保护</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#mov-ds-ax-和-mov-ds-eax"><span class="nav-number">3.1.</span> <span class="nav-text">mov ds, ax 和 mov ds, eax</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#存储器保护"><span class="nav-number">3.2.</span> <span class="nav-text">存储器保护</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#地址变换时的保护"><span class="nav-number">3.3.</span> <span class="nav-text">地址变换时的保护</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#代码段执行的保护"><span class="nav-number">3.3.1.</span> <span class="nav-text">代码段执行的保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#桟操作时的保护"><span class="nav-number">3.3.2.</span> <span class="nav-text">桟操作时的保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据访问时的保护"><span class="nav-number">3.3.3.</span> <span class="nav-text">数据访问时的保护</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用别名"><span class="nav-number">3.4.</span> <span class="nav-text">使用别名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#指令们"><span class="nav-number">3.5.</span> <span class="nav-text">指令们</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十三章-程序的动态加载和执行"><span class="nav-number">4.</span> <span class="nav-text">第十三章 程序的动态加载和执行</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#代码清单"><span class="nav-number">4.1.</span> <span class="nav-text">代码清单</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内核的结构、功能和加载"><span class="nav-number">4.2.</span> <span class="nav-text">内核的结构、功能和加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#内核的结构"><span class="nav-number">4.2.1.</span> <span class="nav-text">内核的结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内核的加载"><span class="nav-number">4.2.2.</span> <span class="nav-text">内核的加载</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在内核中执行"><span class="nav-number">4.3.</span> <span class="nav-text">在内核中执行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#用户程序加载"><span class="nav-number">4.4.</span> <span class="nav-text">用户程序加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#用户程序的结构"><span class="nav-number">4.4.1.</span> <span class="nav-text">用户程序的结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算扇区数"><span class="nav-number">4.4.2.</span> <span class="nav-text">计算扇区数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#动态内存分配"><span class="nav-number">4.4.3.</span> <span class="nav-text">动态内存分配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#段的重定位和描述符的创建"><span class="nav-number">4.4.4.</span> <span class="nav-text">段的重定位和描述符的创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重定位用户程序内的符号地址"><span class="nav-number">4.4.5.</span> <span class="nav-text">重定位用户程序内的符号地址</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十四章-任务和特权级保护"><span class="nav-number">5.</span> <span class="nav-text">第十四章 任务和特权级保护</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#任务的隔离与特权级保护"><span class="nav-number">5.1.</span> <span class="nav-text">任务的隔离与特权级保护</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LDT"><span class="nav-number">5.1.1.</span> <span class="nav-text">LDT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TSS"><span class="nav-number">5.1.2.</span> <span class="nav-text">TSS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#特权级DPC、CPL和RPL"><span class="nav-number">5.1.3.</span> <span class="nav-text">特权级DPC、CPL和RPL</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内核程序的初始化"><span class="nav-number">5.2.</span> <span class="nav-text">内核程序的初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#安装调用门"><span class="nav-number">5.2.1.</span> <span class="nav-text">安装调用门</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#加载用户程序并创建任务"><span class="nav-number">5.3.</span> <span class="nav-text">加载用户程序并创建任务</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#任务控制块和TCB链"><span class="nav-number">5.3.1.</span> <span class="nav-text">任务控制块和TCB链</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#32位桟操作"><span class="nav-number">5.3.2.</span> <span class="nav-text">*32位桟操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#加载用户程序"><span class="nav-number">5.3.3.</span> <span class="nav-text">加载用户程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建局部描述符表"><span class="nav-number">5.3.4.</span> <span class="nav-text">创建局部描述符表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重定位U-SALT表"><span class="nav-number">5.3.5.</span> <span class="nav-text">重定位U-SALT表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建0、1和2特权级的桟"><span class="nav-number">5.3.6.</span> <span class="nav-text">创建0、1和2特权级的桟</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#安装LDT描述符到GDT中"><span class="nav-number">5.3.7.</span> <span class="nav-text">安装LDT描述符到GDT中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#任务状态段TSS创建与安装"><span class="nav-number">5.3.8.</span> <span class="nav-text">任务状态段TSS创建与安装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#用户程序的执行"><span class="nav-number">5.4.</span> <span class="nav-text">用户程序的执行</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#通过调用门实现控制转移"><span class="nav-number">5.4.1.</span> <span class="nav-text">通过调用门实现控制转移</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#进入特权级3的用户程序执行"><span class="nav-number">5.4.2.</span> <span class="nav-text">进入特权级3的用户程序执行</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#第十五章-任务切换"><span class="nav-number">6.</span> <span class="nav-text">第十五章 任务切换</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#任务切换前的设置"><span class="nav-number">6.1.</span> <span class="nav-text">任务切换前的设置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#任务切换的方法"><span class="nav-number">6.2.</span> <span class="nav-text">任务切换的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#call-jmp-iret指令发起的任务切换"><span class="nav-number">6.3.</span> <span class="nav-text">call/jmp/iret指令发起的任务切换</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分页机制和动态页面分配"><span class="nav-number">7.</span> <span class="nav-text">分页机制和动态页面分配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#分页机制概述"><span class="nav-number">7.1.</span> <span class="nav-text">分页机制概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#页目录、页表和页"><span class="nav-number">7.2.</span> <span class="nav-text">页目录、页表和页</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#地址变换的具体过程"><span class="nav-number">7.3.</span> <span class="nav-text">地址变换的具体过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在分页机制下工作"><span class="nav-number">7.4.</span> <span class="nav-text">在分页机制下工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#任务全局空间和局部空间的页面映射"><span class="nav-number">7.5.</span> <span class="nav-text">任务全局空间和局部空间的页面映射</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存分配"><span class="nav-number">7.6.</span> <span class="nav-text">内存分配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分页or分段"><span class="nav-number">7.7.</span> <span class="nav-text">分页or分段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#平坦模型"><span class="nav-number">7.8.</span> <span class="nav-text">平坦模型</span></a></li></ol></li></ol></div>
             
 
           </div>
